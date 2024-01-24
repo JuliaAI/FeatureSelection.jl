@@ -1,4 +1,4 @@
-# MLJExampleInterface.jl
+# FeatureSelection.jl
 
 This repository is a template for creating repositories that contain
 glue code between (i) packages providing machine learning algorithms; and (ii)

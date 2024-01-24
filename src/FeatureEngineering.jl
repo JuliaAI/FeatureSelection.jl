@@ -1,6 +1,6 @@
 module FeatureEngineering
 
-using MLJModelInterface
+using MLJModelInterface, Tables
 
 const MMI = MLJModelInterface
 
