@@ -1,10 +1,11 @@
 # FeatureSelection.jl
 
-This repository is a template for creating repositories that contain
-glue code between (i) packages providing machine learning algorithms; and (ii)
-the machine learning toolbox
-[MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/) - that is,
-for so-called *interface-only packages*.
+Repository housing feature selection algorithms for use with the machine learning toolbox
+[MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/).
+
+| Linux | Coverage |
+| :------------ | :------- |
+| [![Build Status](https://github.com/JuliaAI/MLJExampleInterface.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/MLJExampleInterface.jl/actions) | [![Coverage](https://codecov.io/gh/JuliaAI/MLJExampleInterface.jl/branch/master/graph/badge.svg)](https://codecov.io/github/JuliaAI/MLJExampleInterface.jl?branch=master) |
 
 ## When to use this template
 
@@ -40,11 +41,3 @@ guidelines](https://alan-turing-institute.github.io/MLJ.jl/dev/adding_models_for
    you are currently reading &#128521;.
 
 
-# MLJ.jl <--> Example.jl
-
-Repository implementing the [MLJ](https://alan-turing-institute.github.io/MLJ.jl/dev/) model interface for models provided by
-[Example.jl](https://github.com/JuliaLang/Example.jl).
-
-| Linux | Coverage |
-| :------------ | :------- |
-| [![Build Status](https://github.com/JuliaAI/MLJExampleInterface.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/MLJExampleInterface.jl/actions) | [![Coverage](https://codecov.io/gh/JuliaAI/MLJExampleInterface.jl/branch/master/graph/badge.svg)](https://codecov.io/github/JuliaAI/MLJExampleInterface.jl?branch=master) |

@@ -1,4 +1,4 @@
-name = "FeatureEngineering"
+name = "FeatureSelection"
 uuid = "33837fe5-dbff-4c9e-8c2f-c5612fe2b8b6"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>"]
 version = "0.1.0"
