@@ -7,7 +7,8 @@ const ERR_SPECIFY_MODEL = ArgumentError(
 )
 
 const ERR_MODEL_TYPE = ArgumentError(
-        "Only `Deterministic` and `Probabilistic` model types supported.")
+        "Only `Deterministic` and `Probabilistic` model types supported."
+)
 
 mutable struct RecursiveFeatureElimination{M<:Model} <: Unsupervised
     model::M
@@ -78,7 +79,7 @@ function MMI.fit(selector::RecursiveFeatureElimination, verbosity::Int, X, y, ar
     ## zero indicates that half of the features be selected.
     if n_features_to_select == 0
         n_features_to_select = div(nfeatures, 2) 
-    else if 0 < n_features_to_select < 1
+    elseif 0 < n_features_to_select < 1
         n_features_to_select = round(Int, n_features * n_features_to_select)
     else
         n_features_to_select = round(Int, n_features_to_select)
@@ -101,9 +102,9 @@ function MMI.fit(selector::RecursiveFeatureElimination, verbosity::Int, X, y, ar
     while sum(support) > n_features_to_select
         # Rank the remaining features
         model = selector.model
-        verbosity > 0 && @info ("Fitting estimator with $(sum(support)) features.")
+        verbosity > 0 && @info("Fitting estimator with $(sum(support)) features.")
     
-        data = reformat(model, MMI.selectcols(X, features_left), args...)
+        data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
 
         fitresult, _, report = MMI.fit(model, verbosity - 1, data...)
 
@@ -129,7 +130,7 @@ function MMI.fit(selector::RecursiveFeatureElimination, verbosity::Int, X, y, ar
     end
 
     # Set final attributes
-    data = reformat(model, MMI.selectcols(X, features_left), args...)
+    data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
     verbosity > 0 && @info ("Fitting estimator with $(sum(support)) features.")
     model_fitresult, _, model_report = MMI.fit(model, verbosity - 1, data...)
     
@@ -160,7 +161,7 @@ function MMI.predict(model::RecursiveFeatureElimination, fitresult, X)
     return yhat
 end
 
-function MMI.transform(model::RecursiveFeatureElimination, fitresult, X)
+function MMI.transform(::RecursiveFeatureElimination, fitresult, X)
     return MMI.selectcols(X, fitresult.features_left)
 end
 
@@ -192,7 +193,7 @@ end
 
 # ## Iteration parameter
 # at level of types:
-function MMI.iteration_parameter(::Type{<:RecursiveFeatureElimination{M}}) where M
+function MMI.iteration_parameter(::Type{<:RecursiveFeatureElimination{M}}) where {M}
     return MLJModels.prepend(:model, MMI.iteration_parameter(M))
 end
 

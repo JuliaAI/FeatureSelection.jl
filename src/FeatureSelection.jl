@@ -1,10 +1,10 @@
 module FeatureSelection
 
-using MLJModelInterface, Tables
+using MLJModelInterface, Tables, ScientificTypesBase
+
+export FeatureSelector, RecursiveFeatureElimination
 
 const MMI = MLJModelInterface
-
-
 
 ## Includes
 include("models/featureselector.jl")

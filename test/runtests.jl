@@ -17,12 +17,12 @@ rng = StableRNGs.StableRNG(123)
     )
 
     # Test feature selection with `features=Symbol[]`
-    namesX   = Tables.schema(X).names |> collect
+    namesX   = MLJBase.schema(X).names |> collect
     selector = FeatureSelector()
     f,       = MLJBase.fit(selector, 1, X)
     @test f == namesX
     Xt = MLJBase.transform(selector, f, MLJBase.selectrows(X, 1:2))
-    @test Set(Tables.schema(Xt).names) == Set(namesX)
+    @test Set(MLJBase.schema(Xt).names) == Set(namesX)
     @test length(Xt.Zn) == 2
 
     # Test on selecting features if `features` keyword is defined
