@@ -10,205 +10,30 @@ const ERR_MODEL_TYPE = ArgumentError(
         "Only `Deterministic` and `Probabilistic` model types supported."
 )
 
-mutable struct RecursiveFeatureElimination{M<:Model} <: Unsupervised
-    model::M
-    n_features_to_select::Float64
-    step::Float64
-end
-
-# keyword constructor
-function RecursiveFeatureElimination(
-    args...
-    ;
-    model=nothing,
-    n_features_to_select::Real=0,
-    step::Real = 1
+const ERR_FEATURE_IMPORTANCE_SUPPORT = ArgumentError(
+        "Model does not report feature importance, hence recursive feature algorithm "*
+        "can't be applied."
 )
-    # user can specify model as argument instead of kwarg:
-    length(args) < 2 || throw(ERR_TOO_MANY_ARGUMENTS)
-    if length(args) == 1
-        arg = first(args)
-        model === nothing ||
-            @warn warn_double_spec(arg, model)
-        model = arg
-    else
-        model === nothing && throw(ERR_SPECIFY_MODEL)
+
+const MODEL_TYPES = [:ProbabilisticRecursiveFeatureElimination, :DeterministicRecursiveFeatureElimination]
+const SUPER_TYPES = [:Deterministic, :Probabilistic]
+const MODELTYPE_GIVEN_SUPERTYPES = zip(MODEL_TYPES, SUPER_TYPES)
+
+for (ModelType, ModelSuperType) in  MODELTYPE_GIVEN_SUPERTYPES
+    ex = quote
+        mutable struct $ModelType{M<:Supervised} <: $ModelSuperType
+            model::M
+            n_features_to_select::Float64
+            step::Float64
+        end
     end
-
-    #TODO: Check that the specifed model implements the predict method.
-    # probably add a trait to check this
-    model isa Model || throw(ERR_MODEL_TYPE)
-    
-    selector = RecursiveFeatureElimination{typeof(model)}(
-        model, Float64(n_features_to_select), Float64(step)
-    )
-    message = MMI.clean!(selector)
-    isempty(message) || throw(ArgumentError(message))
-    return selector
+    eval(ex)
 end
 
-function MMI.clean!(selector::RecursiveFeatureElimination)
-    err = ""
-    if !MMI.feature_importances(selector.model)
-        err *= "specified model, $(selector.model) does not support feature importances\n"
-    end
+eval(:(const RFE{M} = Union{$((Expr(:curly, modeltype, :M) for modeltype in MODEL_TYPES)...)}))
 
-    if selector.step <= 0
-        err *= "specified `step` must be greater than zero.\n"
-    end
-
-    if selector.n_features_to_select < 0
-        err *= "specified `step` must be non-negative.\n"
-    end
-
-    return err
-end
-
-
-function MMI.fit(selector::RecursiveFeatureElimination, verbosity::Int, X, y, args...)
-    args = (y, args...)
-    Xcols = Tables.Columns(X)
-    features = Vector(Tables.columnnames(Xcols))
-    
-    nfeatures = length(features)
-
-    nfeatures < 2 || throw(ArgumentError("The number of features in feature matrix `X` must be at least 2."))
-
-    # Compute required number of features to select
-    n_features_to_select = selector.n_features_to_select # Remember to modify this estimate later
-    ## zero indicates that half of the features be selected.
-    if n_features_to_select == 0
-        n_features_to_select = div(nfeatures, 2) 
-    elseif 0 < n_features_to_select < 1
-        n_features_to_select = round(Int, n_features * n_features_to_select)
-    else
-        n_features_to_select = round(Int, n_features_to_select)
-    end
-
-    step = selector.step
-    
-    if 0 < step < 1
-        step = round(Int, max(1, step * n_features))
-    else
-        step = rount(Int, step) 
-    end
-    
-    support = trues(nfeatures)
-    ranking = trues(nfeatures) # every feature has equal rank initially
-    indexes  = axes(support, 1)
-
-    # Elimination
-    features_left = features
-    while sum(support) > n_features_to_select
-        # Rank the remaining features
-        model = selector.model
-        verbosity > 0 && @info("Fitting estimator with $(sum(support)) features.")
-    
-        data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
-
-        fitresult, _, report = MMI.fit(model, verbosity - 1, data...)
-
-        # Get absolute values of importance and rank them
-        importances = abs.last.(
-            MMI.feature_importances(
-                model,
-                fitresult,
-                report
-            )
-        )
-
-        ranks = sortperm(importances)
-
-        # Eliminate the worse features
-        threshold = min(step, sum(support) - n_features_to_select)
-        
-        support[indexes[ranks][1:threshold]] .= false
-        ranking[.!support] += 1
-
-        # Remaining features
-        features_left = features[support]
-    end
-
-    # Set final attributes
-    data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
-    verbosity > 0 && @info ("Fitting estimator with $(sum(support)) features.")
-    model_fitresult, _, model_report = MMI.fit(model, verbosity - 1, data...)
-    
-    fitresult = (
-        support = support,
-        model_fitresult = model_fitresult,
-        features_left = features_left
-    )
-    report = ( 
-        ranking = ranking,
-        model_report = model_report
-    )
-
-    return fitresult, nothing, report
-
-end
-
-function MMI.fitted_params(model::RecursiveFeatureElimination, fitresult)
-    (
-        features_left = fitresult.features_left,
-        model_fitresult = MMI.fitted_params(model.model, fitresult.model_fitresult)
-    )
-end
-
-function MMI.predict(model::RecursiveFeatureElimination, fitresult, X)
-    X_ = reformat(model, MMI.transform(model, fitresult, X), X)
-    yhat = MMI.predict(model.model, fitresult.model_fitresult, X_)
-    return yhat
-end
-
-function MMI.transform(::RecursiveFeatureElimination, fitresult, X)
-    return MMI.selectcols(X, fitresult.features_left)
-end
-
-## Traits definitions
-function MMI.load_path(::Type{<:RecursiveFeatureElimination{M}}) where {M}
-    return "FeatureEngineering.RecursiveFeatureElimination"
-end
-
-for trait in [
-    :supports_weights,
-    :supports_class_weights,
-    :is_pure_julia,
-    :input_scitype,
-    :target_scitype,
-    :output_scitype,
-    :supports_training_losses,
-    ]
-
-    # try to get trait at level of types ("failure" here just
-    # means falling back to `Unknown`):
-    quote
-    MMI.$trait(::Type{<:RecursiveFeatureElimination{M}}) where M = MMI.$trait(M)
-    end |> eval
-
-    # needed because traits are not always deducable from
-    # the type (eg, `target_scitype` and `Pipeline` models):
-    eval(:(MMI.$trait(model::RecursiveFeatureElimination) = MMI.$trait(model.model)))
-end
-
-# ## Iteration parameter
-# at level of types:
-function MMI.iteration_parameter(::Type{<:RecursiveFeatureElimination{M}}) where {M}
-    return MLJModels.prepend(:model, MMI.iteration_parameter(M))
-end
-
-# at level of instances:
-function MMI.iteration_parameter(model::RecursiveFeatureElimination)
-    return MLJModels.prepend(:model, MMI.iteration_parameter(model.model))
-end
-
-## TRAINING LOSSES SUPPORT
-function MMI.training_losses(model::RecursiveFeatureElimination, rfe_report)
-    return MMI.training_losses(model.model, rfe_report.model_report)
-end
-
+# Common keyword constructor for both model types
 """
-$(MMI.doc_header(RecursiveFeatureElimination))
     Recursive Feature Elimination
     
 # Training data
@@ -263,9 +88,215 @@ containing only columns corresponding to features gotten from the RFE algorithm.
 # Examples
 ```
 using MLJ
-RecursiveFeatureElimination = @load RFE pkg=FeatureSelection
+RecursiveFeatureElimination = @load DeterministicRecursiveFeatureElimination pkg=FeatureSelection
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
 X, y = @load_boston; # loads the crabs dataset from MLJBase
 ```
 
 """
+mutable struct RecursiveFeatureElimination{M<:Supervised} <: Supervised
+    model::M
+    n_features_to_select::Float64
+    step::Float64
+
+    function RecursiveFeatureElimination(
+        args...
+        ;
+        model=nothing,
+        n_features_to_select::Real=0,
+        step::Real = 1
+    )
+        # user can specify model as argument instead of kwarg:
+        length(args) < 2 || throw(ERR_TOO_MANY_ARGUMENTS)
+        if length(args) == 1
+            arg = first(args)
+            model === nothing ||
+                @warn warn_double_spec(arg, model)
+            model = arg
+        else
+            model === nothing && throw(ERR_SPECIFY_MODEL)
+        end
+
+        #TODO: Check that the specifed model implements the predict method.
+        # probably add a trait to check this
+        MMI.reports_feature_importances(model) || throw(ERR_FEATURE_IMPORTANCE_SUPPORT)
+        if model isa Deterministic    
+            selector = DeterministicRecursiveFeatureElimination{typeof(model)}(
+                model, Float64(n_features_to_select), Float64(step)
+            )
+        elseif model isa Probabilistic
+            selector = ProbabilisticRecursiveFeatureElimination{typeof(model)}(
+                model, Float64(n_features_to_select), Float64(step)
+            )
+        else
+            throw(ERR_MODEL_TYPE)
+        end 
+        message = MMI.clean!(selector)
+        isempty(message) || @warn(message)
+        return selector
+    end
+end
+
+function MMI.clean!(selector::RFE)
+    msg = ""
+    if selector.step <= 0
+        msg *= "specified `step` must be greater than zero.\n"
+        "Resetting `step = 1`"
+    end
+
+    if selector.n_features_to_select < 0
+        msg *= "specified `step` must be non-negative.\n"*
+        "Resetting `n_features_to_select = 0`"
+    end
+
+    return msg
+end
+
+
+function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
+    args = (y, args...)
+    Xcols = Tables.Columns(X)
+    features = Vector(Tables.columnnames(Xcols))
+    nfeatures = length(features)
+    nfeatures < 2 && throw(ArgumentError("The number of features in the feature matrix must be at least 2."))
+
+    # Compute required number of features to select
+    n_features_to_select = selector.n_features_to_select # Remember to modify this estimate later
+    ## zero indicates that half of the features be selected.
+    if n_features_to_select == 0
+        n_features_to_select = div(nfeatures, 2) 
+    elseif 0 < n_features_to_select < 1
+        n_features_to_select = round(Int, n_features * n_features_to_select)
+    else
+        n_features_to_select = round(Int, n_features_to_select)
+    end
+
+    step = selector.step
+    
+    if 0 < step < 1
+        step = round(Int, max(1, step * n_features))
+    else
+        step = round(Int, step) 
+    end
+    
+    support = trues(nfeatures)
+    ranking = ones(nfeatures) # every feature has equal rank initially
+    indexes  = axes(support, 1)
+
+    # Elimination
+    features_left = copy(features)
+    while sum(support) > n_features_to_select
+        # Rank the remaining features
+        model = selector.model
+        verbosity > 0 && @info("Fitting estimator with $(sum(support)) features.")
+    
+        data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
+
+        fitresult, _, report = MMI.fit(model, verbosity - 1, data...)
+
+        # Get absolute values of importance and rank them
+        importances = abs.(
+            last.(
+                MMI.feature_importances(
+                    selector.model,
+                    fitresult,
+                    report
+                )
+            )
+        )
+
+        ranks = sortperm(importances)
+
+        # Eliminate the worse features
+        threshold = min(step, sum(support) - n_features_to_select)
+        
+        support[indexes[ranks][1:threshold]] .= false
+        ranking[.!support] .+= 1
+
+        # Remaining features
+        features_left = @view(features[support])
+    end
+
+    # Set final attributes
+    data = MMI.reformat(selector.model, MMI.selectcols(X, features_left), args...)
+    verbosity > 0 && @info ("Fitting estimator with $(sum(support)) features.")
+    model_fitresult, _, model_report = MMI.fit(selector.model, verbosity - 1, data...)
+    
+    fitresult = (
+        support = support,
+        model_fitresult = model_fitresult,
+        features_left = copy(features_left)
+    )
+    report = ( 
+        ranking = ranking,
+        model_report = model_report,
+        features = features
+    )
+
+    return fitresult, nothing, report
+
+end
+
+function MMI.fitted_params(model::RFE, fitresult)
+    (
+        features_left = fitresult.features_left,
+        model_fitresult = MMI.fitted_params(model.model, fitresult.model_fitresult)
+    )
+end
+
+function MMI.predict(model::RFE, fitresult, X)
+    X_ = reformat(model, MMI.transform(model, fitresult, X), X)
+    yhat = MMI.predict(model.model, fitresult.model_fitresult, X_)
+    return yhat
+end
+
+function MMI.transform(::RFE, fitresult, X)
+    return MMI.selectcols(X, fitresult.features_left)
+end
+
+function MMI.feature_importances(::RFE, fitresult, report)
+    return Pair.(report.features, report.ranking)
+end
+
+## Traits definitions
+function MMI.load_path(::Type{<:RFE})
+    return "FeatureEngineering.RecursiveFeatureElimination"
+end
+
+for trait in [
+    :supports_weights,
+    :supports_class_weights,
+    :is_pure_julia,
+    :input_scitype,
+    :target_scitype,
+    :output_scitype,
+    :supports_training_losses,
+    :reports_feature_importances,
+    ]
+
+    # try to get trait at level of types ("failure" here just
+    # means falling back to `Unknown`):
+    quote
+    MMI.$trait(::Type{<:RFE{M}}) where M = MMI.$trait(M)
+    end |> eval
+
+    # needed because traits are not always deducable from
+    # the type (eg, `target_scitype` and `Pipeline` models):
+    eval(:(MMI.$trait(model::RFE) = MMI.$trait(model.model)))
+end
+
+# ## Iteration parameter
+# at level of types:
+function MMI.iteration_parameter(::Type{<:RFE{M}}) where {M}
+    return MLJModels.prepend(:model, MMI.iteration_parameter(M))
+end
+
+# at level of instances:
+function MMI.iteration_parameter(model::RFE)
+    return MLJModels.prepend(:model, MMI.iteration_parameter(model.model))
+end
+
+## TRAINING LOSSES SUPPORT
+function MMI.training_losses(model::RFE, rfe_report)
+    return MMI.training_losses(model.model, rfe_report.model_report)
+end

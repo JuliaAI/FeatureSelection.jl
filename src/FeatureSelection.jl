@@ -1,6 +1,6 @@
 module FeatureSelection
 
-using MLJModelInterface, Tables, ScientificTypesBase
+using MLJModelInterface, Tables, ScientificTypesBase, MLJTuning
 
 export FeatureSelector, RecursiveFeatureElimination
 
