@@ -35,23 +35,42 @@ eval(:(const RFE{M} = Union{$((Expr(:curly, modeltype, :M) for modeltype in MODE
 # Common keyword constructor for both model types
 """
     Recursive Feature Elimination
+
+    From MLJ, the RecursiveFeatureElimination type can be imported using
+
+    `RecursiveFeatureElimination = @load DeterministicRecursiveFeatureElimination pkg=FeatureSelection`
     
+    OR
+    
+    `RecursiveFeatureElimination = @load ProbabilisticRecursiveFeatureElimination pkg=FeatureSelection`
+
+    Construct an instance with default hyper-parameters using the syntax 
+    `model = RecursiveFeatureElimination(model=...)`. Provide keyword arguments to override 
+    hyper-parameter defaults.  
+    
+    
+    This model implements a recursive feature elimination algorithm for feature selection. 
+    It recursively removes features, training a base model on the remaining features and 
+    evaluating their importance until the desired number of features is selected.
+        
 # Training data
     In MLJ or MLJBase, bind an instance `model` to data with
 
     mach = machine(model, X, y)
 
-    OR
+    OR, if the base model supports weights as
 
     mach = machine(model, X, y, w)
 
 Here:
 
-- `X` is any table of input features (eg, a `DataFrame`) whose columns are of scitype
-  `Continuous`; check column scitypes with `schema(X)`.
+- `X` is any table of input features (eg, a `DataFrame`) whose columns are of the scitype
+  as that required by the base model; check column scitypes with `schema(X)` and column 
+  scitypes required by base model with `input_scitype(basemodel)`.
 
 - `y` is the target, which can be any table of responses whose element scitype is 
-    `Continuous`; check the scitype with `scitype(y)`.
+    `Continuous` or `Finite` depending on the `target_scitype` required by the base model; 
+    check the scitype with `scitype(y)`.
 
 - `w` is the observation weights which can either be `nothing`(default) or an 
   `AbstractVector` whoose element scitype is `Count` or `Continuous`. This is different 
@@ -60,37 +79,66 @@ Here:
 Train the machine using `fit!(mach, rows=...)`.
 
 # Hyper-parameters
-    * model : A model with a ``fit`` method that provides information on feature
-        feature importance (i.e `reports_feature_importances(model) == true`)
+- model: A base model with a `fit` method that provides information on feature 
+  feature importance (i.e `reports_feature_importances(model) == true`)
 
-    * n_features_to_select : int or float, default=None
-        The number of features to select. If `None`, half of the features are
-        selected. If integer, the parameter is the absolute number of features
-        to select. If float between 0 and 1, it is the fraction of features to
-        select.
+- n_features_to_select::Real = 0: The number of features to select. If `0`, half of the 
+  features are selected. If a positive integer, the parameter is the absolute number 
+  of features to select. If a real number between 0 and 1, it is the fraction of features 
+  to select.
 
-    * step : int or float, default=1
-        If greater than or equal to 1, then `step` corresponds to the
-        (integer) number of features to remove at each iteration.
-        If within (0.0, 1.0), then ``step`` corresponds to the percentage
-        (rounded down) of features to remove at each iteration.
+- step::Real=1: If the value of step is at least 1, it signifies the quantity of features to eliminate 
+  in each iteration. Conversely, if step falls strictly within the range of 0.0 to 1.0, 
+  it denotes the proportion (rounded down) of features to remove during each iteration.
 
-# Operations 
-- `predict(mach, X)`: 
-- `transform(mach, X)`: transform the input table `X` into a new table 
-containing only columns corresponding to features gotten from the RFE algorithm.
+# Operations
+
+- `transform(mach, X)`: transform the input table `X` into a new table containing only 
+columns corresponding to features gotten from the RFE algorithm.
+
+- `predict(mach, X)`: transform the input table `X` into a new table same as in 
+
+`transform(mach, X)` above and predict using the fitted base model on the transformed table.
 
 # Fitted parameters
+The fields of `fitted_params(mach)` are:
+- `features_left`: features remaining after recursive feature elimination.
+
+- `model_fitresult`: fitted parameters of the base model.
 
 # Report
+The fields of `report(mach)` are:
+- `ranking`: The feature ranking of each features in the training dataset. 
 
+- `model_report`: report for the fitted base model.
+
+- `features`: features seen during the training process. 
 
 # Examples
 ```
-using MLJ
+using MLJ, StableRNGs
+
 RecursiveFeatureElimination = @load DeterministicRecursiveFeatureElimination pkg=FeatureSelection
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
-X, y = @load_boston; # loads the crabs dataset from MLJBase
+
+# Creates a dataset where the target only depends on the first 5 columns of the input table.
+A = rand(rng, 50, 10);
+y = 10 .* sin.(pi .* A[:, 1] .* A[:, 2]) + 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]);
+X = MLJ.table(A);
+
+# fit a rfe model
+rf = RandomForestRegressor()
+selector = RecursiveFeatureElimination(model = rf)
+mach = machine(selector, X, y)
+fit!(mach)
+
+# view the feature importances 
+feature_importances(mach)
+
+# predict using the base model 
+Xnew = MLJ.table(rand(rng, 50, 10));
+predict(mach, Xnew)
+
 ```
 
 """
