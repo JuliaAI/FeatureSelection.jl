@@ -3,11 +3,11 @@ function warn_double_spec(arg, model)
 end
  
 const ERR_SPECIFY_MODEL = ArgumentError(
- "You need to specify pass model as positional argument or specify `model=...`."
+    "You need to specify model as positional argument or specify `model=...`."
 )
 
 const ERR_MODEL_TYPE = ArgumentError(
-        "Only `Deterministic` and `Probabilistic` model types supported."
+    "Only `Deterministic` and `Probabilistic` model types supported."
 )
 
 const ERR_FEATURE_IMPORTANCE_SUPPORT = ArgumentError(
@@ -34,31 +34,22 @@ eval(:(const RFE{M} = Union{$((Expr(:curly, modeltype, :M) for modeltype in MODE
 
 # Common keyword constructor for both model types
 """
-    Recursive Feature Elimination
+    RecursiveFeatureElimination(model, n_features_to_select, step)
 
-    From MLJ, the RecursiveFeatureElimination type can be imported using
+This model implements a recursive feature elimination algorithm for feature selection. 
+It recursively removes features, training a base model on the remaining features and 
+evaluating their importance until the desired number of features is selected.
 
-    `RecursiveFeatureElimination = @load DeterministicRecursiveFeatureElimination pkg=FeatureSelection`
-    
-    OR
-    
-    `RecursiveFeatureElimination = @load ProbabilisticRecursiveFeatureElimination pkg=FeatureSelection`
-
-    Construct an instance with default hyper-parameters using the syntax 
-    `model = RecursiveFeatureElimination(model=...)`. Provide keyword arguments to override 
-    hyper-parameter defaults.  
-    
-    
-    This model implements a recursive feature elimination algorithm for feature selection. 
-    It recursively removes features, training a base model on the remaining features and 
-    evaluating their importance until the desired number of features is selected.
+Construct an instance with default hyper-parameters using the syntax 
+`model = RecursiveFeatureElimination(model=...)`. Provide keyword arguments to override 
+hyper-parameter defaults.  
         
 # Training data
-    In MLJ or MLJBase, bind an instance `model` to data with
+In MLJ or MLJBase, bind an instance `model` to data with
 
     mach = machine(model, X, y)
 
-    OR, if the base model supports weights as
+OR, if the base model supports weights, as
 
     mach = machine(model, X, y, w)
 
@@ -87,9 +78,9 @@ Train the machine using `fit!(mach, rows=...)`.
   of features to select. If a real number between 0 and 1, it is the fraction of features 
   to select.
 
-- step::Real=1: If the value of step is at least 1, it signifies the quantity of features to eliminate 
-  in each iteration. Conversely, if step falls strictly within the range of 0.0 to 1.0, 
-  it denotes the proportion (rounded down) of features to remove during each iteration.
+- step::Real=1: If the value of step is at least 1, it signifies the quantity of features to 
+  eliminate in each iteration. Conversely, if step falls strictly within the range of 
+  0.0 to 1.0, it denotes the proportion (rounded down) of features to remove during each iteration.
 
 # Operations
 
@@ -98,11 +89,12 @@ columns corresponding to features gotten from the RFE algorithm.
 
 - `predict(mach, X)`: transform the input table `X` into a new table same as in 
 
-`transform(mach, X)` above and predict using the fitted base model on the transformed table.
+- `transform(mach, X)` above and predict using the fitted base model on the 
+  transformed table.
 
 # Fitted parameters
 The fields of `fitted_params(mach)` are:
-- `features_left`: features remaining after recursive feature elimination.
+- `features_left`: names of features remaining after recursive feature elimination.
 
 - `model_fitresult`: fitted parameters of the base model.
 
@@ -112,13 +104,12 @@ The fields of `report(mach)` are:
 
 - `model_report`: report for the fitted base model.
 
-- `features`: features seen during the training process. 
+- `features`: names of features seen during the training process. 
 
 # Examples
 ```
-using MLJ, StableRNGs
+using FeatureSelection, MLJ, StableRNGs
 
-RecursiveFeatureElimination = @load DeterministicRecursiveFeatureElimination pkg=FeatureSelection
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
 
 # Creates a dataset where the target only depends on the first 5 columns of the input table.
@@ -142,47 +133,40 @@ predict(mach, Xnew)
 ```
 
 """
-mutable struct RecursiveFeatureElimination{M<:Supervised} <: Supervised
-    model::M
-    n_features_to_select::Float64
-    step::Float64
-
-    function RecursiveFeatureElimination(
-        args...
-        ;
-        model=nothing,
-        n_features_to_select::Real=0,
-        step::Real = 1
-    )
-        # user can specify model as argument instead of kwarg:
-        length(args) < 2 || throw(ERR_TOO_MANY_ARGUMENTS)
-        if length(args) == 1
-            arg = first(args)
-            model === nothing ||
-                @warn warn_double_spec(arg, model)
-            model = arg
-        else
-            model === nothing && throw(ERR_SPECIFY_MODEL)
-        end
-
-        #TODO: Check that the specifed model implements the predict method.
-        # probably add a trait to check this
-        MMI.reports_feature_importances(model) || throw(ERR_FEATURE_IMPORTANCE_SUPPORT)
-        if model isa Deterministic    
-            selector = DeterministicRecursiveFeatureElimination{typeof(model)}(
-                model, Float64(n_features_to_select), Float64(step)
-            )
-        elseif model isa Probabilistic
-            selector = ProbabilisticRecursiveFeatureElimination{typeof(model)}(
-                model, Float64(n_features_to_select), Float64(step)
-            )
-        else
-            throw(ERR_MODEL_TYPE)
-        end 
-        message = MMI.clean!(selector)
-        isempty(message) || @warn(message)
-        return selector
+function RecursiveFeatureElimination(
+    args...;
+    model=nothing,
+    n_features_to_select::Real=0,
+    step::Real = 1
+)
+    # user can specify model as argument instead of kwarg:
+    length(args) < 2 || throw(ERR_TOO_MANY_ARGUMENTS)
+    if length(args) == 1
+        arg = first(args)
+        model === nothing ||
+            @warn warn_double_spec(arg, model)
+        model = arg
+    else
+        model === nothing && throw(ERR_SPECIFY_MODEL)
     end
+
+    #TODO: Check that the specifed model implements the predict method.
+    # probably add a trait to check this
+    MMI.reports_feature_importances(model) || throw(ERR_FEATURE_IMPORTANCE_SUPPORT)
+    if model isa Deterministic    
+        selector = DeterministicRecursiveFeatureElimination{typeof(model)}(
+            model, Float64(n_features_to_select), Float64(step)
+        )
+    elseif model isa Probabilistic
+        selector = ProbabilisticRecursiveFeatureElimination{typeof(model)}(
+            model, Float64(n_features_to_select), Float64(step)
+        )
+    else
+        throw(ERR_MODEL_TYPE)
+    end 
+    message = MMI.clean!(selector)
+    isempty(message) || @warn(message)
+    return selector
 end
 
 function MMI.clean!(selector::RFE)
@@ -200,11 +184,10 @@ function MMI.clean!(selector::RFE)
     return msg
 end
 
-
 function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
     args = (y, args...)
     Xcols = Tables.Columns(X)
-    features = Vector(Tables.columnnames(Xcols))
+    features = collect(Tables.columnnames(Xcols))
     nfeatures = length(features)
     nfeatures < 2 && throw(ArgumentError("The number of features in the feature matrix must be at least 2."))
 
@@ -293,7 +276,7 @@ function MMI.fitted_params(model::RFE, fitresult)
 end
 
 function MMI.predict(model::RFE, fitresult, X)
-    X_ = reformat(model, MMI.transform(model, fitresult, X), X)
+    X_ = reformat(model.model, MMI.transform(model, fitresult, X))[1]
     yhat = MMI.predict(model.model, fitresult.model_fitresult, X_)
     return yhat
 end
@@ -307,14 +290,19 @@ function MMI.feature_importances(::RFE, fitresult, report)
 end
 
 ## Traits definitions
-function MMI.load_path(::Type{<:RFE})
-    return "FeatureEngineering.RecursiveFeatureElimination"
+function MMI.load_path(::Type{<:DeterministicRecursiveFeatureElimination})
+    return "FeatureEngineering.DeterministicRecursiveFeatureElimination"
+end
+
+function MMI.load_path(::Type{<:ProbabilisticRecursiveFeatureElimination})
+    return "FeatureEngineering.ProbabilisticRecursiveFeatureElimination"
 end
 
 for trait in [
     :supports_weights,
     :supports_class_weights,
     :is_pure_julia,
+    :is_wrapper,
     :input_scitype,
     :target_scitype,
     :output_scitype,

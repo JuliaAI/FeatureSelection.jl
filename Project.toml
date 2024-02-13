@@ -5,14 +5,12 @@ version = "0.1.0"
 
 [deps]
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-MLJTuning = "03970b2e-30c4-11ea-3135-d1576263f10f"
 ScientificTypesBase = "30f210dd-8aff-4c5f-94ba-8e64358c1161"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [compat]
 julia = "1"
 MLJModelInterface = "1.4"
-MLJTuning = "0.8"
 ScientificTypesBase = "3"
 Tables = "1.2"
 
