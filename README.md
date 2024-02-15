@@ -18,11 +18,12 @@ Pkg.add("FeatureSelection")
 
 # Example Usage
 Lets build a supervised recursive feature eliminator with `RandomForestRegressor` from `MLJDecisionTreeInterface` as our base model.
-But first we need a dataset to train on. We shall create a synthetic dataset popularly known in the R community as the friedman dataset#1. Notice how the tart vector for this dataset depends on only the first 
+But first we need a dataset to train on. We shall create a synthetic dataset popularly known in the R community as the friedman dataset#1. Notice how the target vector for this dataset depends on only the first 
 five columns of feature table. So we expect that our recursive feature elimination should return the first
 columns as important features.
 ```julia
-using FeatureSelection, MLJ, StableRNGs, MLJDecisionTreeInterface
+using MLJ # or, minimally, `using FeatureSelection, MLJModels, MLJBase`
+using StableRNGs
 rng = StableRNG(123)
 A = rand(rng, 50, 10)
 X = MLJ.table(A) # features
@@ -32,6 +33,7 @@ y = @views(
 ```
 Now we that we have our data we can create our recursive feature elimination model and train it on our dataset
 ```julia
+RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
 forest = RandomForestRegressor()
 rfe = RecursiveFeatureElimination(
     model = forest, n_features_to_select=5, step=1
