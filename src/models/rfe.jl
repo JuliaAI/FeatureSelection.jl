@@ -23,7 +23,7 @@ for (ModelType, ModelSuperType) in  MODELTYPE_GIVEN_SUPERTYPES
     ex = quote
         mutable struct $ModelType{M<:Supervised} <: $ModelSuperType
             model::M
-            n_features_to_select::Float64
+            n_features::Float64
             step::Float64
         end
     end
@@ -34,7 +34,7 @@ eval(:(const RFE{M} = Union{$((Expr(:curly, modeltype, :M) for modeltype in MODE
 
 # Common keyword constructor for both model types
 """
-    RecursiveFeatureElimination(model, n_features_to_select, step)
+    RecursiveFeatureElimination(model, n_features, step)
 
 This model implements a recursive feature elimination algorithm for feature selection. 
 It recursively removes features, training a base model on the remaining features and 
@@ -73,7 +73,7 @@ Train the machine using `fit!(mach, rows=...)`.
 - model: A base model with a `fit` method that provides information on feature 
   feature importance (i.e `reports_feature_importances(model) == true`)
 
-- n_features_to_select::Real = 0: The number of features to select. If `0`, half of the 
+- n_features::Real = 0: The number of features to select. If `0`, half of the 
   features are selected. If a positive integer, the parameter is the absolute number 
   of features to select. If a real number between 0 and 1, it is the fraction of features 
   to select.
@@ -136,7 +136,7 @@ predict(mach, Xnew)
 function RecursiveFeatureElimination(
     args...;
     model=nothing,
-    n_features_to_select::Real=0,
+    n_features::Real=0,
     step::Real = 1
 )
     # user can specify model as argument instead of kwarg:
@@ -155,11 +155,11 @@ function RecursiveFeatureElimination(
     MMI.reports_feature_importances(model) || throw(ERR_FEATURE_IMPORTANCE_SUPPORT)
     if model isa Deterministic    
         selector = DeterministicRecursiveFeatureElimination{typeof(model)}(
-            model, Float64(n_features_to_select), Float64(step)
+            model, Float64(n_features), Float64(step)
         )
     elseif model isa Probabilistic
         selector = ProbabilisticRecursiveFeatureElimination{typeof(model)}(
-            model, Float64(n_features_to_select), Float64(step)
+            model, Float64(n_features), Float64(step)
         )
     else
         throw(ERR_MODEL_TYPE)
@@ -176,9 +176,9 @@ function MMI.clean!(selector::RFE)
         "Resetting `step = 1`"
     end
 
-    if selector.n_features_to_select < 0
+    if selector.n_features < 0
         msg *= "specified `step` must be non-negative.\n"*
-        "Resetting `n_features_to_select = 0`"
+        "Resetting `n_features = 0`"
     end
 
     return msg
@@ -192,14 +192,14 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
     nfeatures < 2 && throw(ArgumentError("The number of features in the feature matrix must be at least 2."))
 
     # Compute required number of features to select
-    n_features_to_select = selector.n_features_to_select # Remember to modify this estimate later
+    n_features = selector.n_features # Remember to modify this estimate later
     ## zero indicates that half of the features be selected.
-    if n_features_to_select == 0
-        n_features_to_select = div(nfeatures, 2) 
-    elseif 0 < n_features_to_select < 1
-        n_features_to_select = round(Int, n_features * n_features_to_select)
+    if n_features == 0
+        n_features = div(nfeatures, 2) 
+    elseif 0 < n_features < 1
+        n_features = round(Int, n_features * n_features)
     else
-        n_features_to_select = round(Int, n_features_to_select)
+        n_features = round(Int, n_features)
     end
 
     step = selector.step
@@ -216,7 +216,7 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
 
     # Elimination
     features_left = copy(features)
-    while sum(support) > n_features_to_select
+    while sum(support) > n_features
         # Rank the remaining features
         model = selector.model
         verbosity > 0 && @info("Fitting estimator with $(sum(support)) features.")
@@ -239,7 +239,7 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
         ranks = sortperm(importances)
 
         # Eliminate the worse features
-        threshold = min(step, sum(support) - n_features_to_select)
+        threshold = min(step, sum(support) - n_features)
         
         support[indexes[ranks][1:threshold]] .= false
         ranking[.!support] .+= 1
