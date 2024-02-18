@@ -72,4 +72,11 @@ As before we can inspect the important features by inspesting the `fitted_params
 ```julia
 fitted_parms(self_tuning_rfe_mach).features_left == [:x1, :x2, :x3, :x4, :x5]
 ```
+and call `predict` on the tuned model machine as shown below
+```julia
+Xnew = MLJ.table(rand(rng, 50, 10)) # create test data
+predict(self_tuning_rfe_mach, Xnew)
+```
+In this case, prediction is done using the best recursive feature elimination model gotten from the tuning process above.
+
 For more information various cross-validation strategies and `TunedModel` see [MLJ Documentation](https://alan-turing-institute.github.io/MLJ.jl/dev/)
