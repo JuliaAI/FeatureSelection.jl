@@ -19,9 +19,10 @@ Pkg.add("FeatureSelection")
 # Example Usage
 Lets build a supervised recursive feature eliminator with `RandomForestRegressor` 
 from DecisionTree.jl as our base model.
-But first we need a dataset to train on. We shall create a synthetic dataset popularly known in the R community as the friedman dataset#1. Notice how the target vector for this dataset depends on only the first 
-five columns of feature table. So we expect that our recursive feature elimination should return the first
-columns as important features.
+But first we need a dataset to train on. We shall create a synthetic dataset popularly 
+known in the R community as the friedman dataset#1. Notice how the target vector for this 
+dataset depends on only the first five columns of feature table. So we expect that our 
+recursive feature elimination should return the first columns as important features.
 ```julia
 using MLJ # or, minimally, `using FeatureSelection, MLJModels, MLJBase`
 using StableRNGs
@@ -29,10 +30,13 @@ rng = StableRNG(123)
 A = rand(rng, 50, 10)
 X = MLJ.table(A) # features
 y = @views(
-    10 .* sin.(pi .* A[:, 1] .* A[:, 2]) + 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]
+    10 .* sin.(
+        pi .* A[:, 1] .* A[:, 2]
+    ) + 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]
 ) # target
 ```
-Now we that we have our data we can create our recursive feature elimination model and train it on our dataset
+Now we that we have our data we can create our recursive feature elimination model and 
+train it on our dataset
 ```julia
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
 forest = RandomForestRegressor()
@@ -53,10 +57,10 @@ select just those features some new table including all the original features.
 in `?RecursiveFeatureElimination`.
 
 Okay, let's say that we didn't know that our synthetic dataset depends on only five 
-columns from our feature table. We could apply cross fold validation `CV(nfolds=5)` with our 
-recursive feature elimination model to select the optimal value of  
-`n_features` for our model. In this case we will use a simple Grid search with 
-root mean square as the measure. 
+columns from our feature table. We could apply cross fold validation `CV(nfolds=5)` with 
+our recursive feature elimination model to select the optimal value of  
+`n_features` for our model. In this case we will use a simple Grid search with root mean 
+square as the measure. 
 ```julia
 rfe = RecursiveFeatureElimination(model = forest)
 tuning_rfe_model  = TunedModel(
@@ -80,6 +84,8 @@ and call `predict` on the tuned model machine as shown below
 Xnew = MLJ.table(rand(rng, 50, 10)) # create test data
 predict(self_tuning_rfe_mach, Xnew)
 ```
-In this case, prediction is done using the best recursive feature elimination model gotten from the tuning process above.
+In this case, prediction is done using the best recursive feature elimination model gotten 
+from the tuning process above.
 
-For more information various cross-validation strategies and `TunedModel` see [MLJ Documentation](https://alan-turing-institute.github.io/MLJ.jl/dev/)
+For more information various cross-validation strategies and `TunedModel` see 
+[MLJ Documentation](https://alan-turing-institute.github.io/MLJ.jl/dev/)
