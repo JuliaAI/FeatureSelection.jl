@@ -84,7 +84,7 @@ MMI.metadata_model(
     FeatureSelector,
     input_scitype = Table,
     output_scitype = Table,
-    load_path = "MLJModels.FeatureSelector"
+    load_path = "FeatureSelction.FeatureSelector"
 )
 
 """

@@ -24,7 +24,7 @@ known in the R community as the friedman dataset#1. Notice how the target vector
 dataset depends on only the first five columns of feature table. So we expect that our 
 recursive feature elimination should return the first columns as important features.
 ```julia
-using MLJ # or, minimally, `using FeatureSelection, MLJModels, MLJBase`
+using MLJ, FeatureSelection
 using StableRNGs
 rng = StableRNG(123)
 A = rand(rng, 50, 10)
@@ -41,20 +41,26 @@ train it on our dataset
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
 forest = RandomForestRegressor()
 rfe = RecursiveFeatureElimination(
-    model = forest, n_features_to_select=5, step=1
+    model = forest, n_features=5, step=1
 ) # see doctring for description of defaults
 mach = machine(rfe, X, y)
 fit!(mach)
 ```
-We can view the important features by inspecting the `fitted_params` object.
+If we wish, we can get the feature importance scores, either by inspecting `report(mach)` 
+or calling the `feature_importances` function on the fitted machine as shown below
+```julia
+report(mach).ranking # returns [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+feature_importances(mach) # returns dict of feature => rank pairs
+```
+We can view the important features used by our model by inspecting the `fitted_params` object.
 ```julia
 p = fitted_params(mach)
 p.features_left == [:x1, :x2, :x3, :x4, :x5]
 ```
-We can also call `predict` on the fitted machine, to predict using a 
-random forest regressor trained just on those features, or call `transform`, to 
-select just those features some new table including all the original features.
-in `?RecursiveFeatureElimination`.
+We can also call the `predict` method on the fitted machine, to predict using a 
+random forest regressor trained using only the important features, or call the `transform` 
+method, to select just those features from some new table including all the original features.
+For more info, type `?RecursiveFeatureElimination` on a Julia REPL.
 
 Okay, let's say that we didn't know that our synthetic dataset depends on only five 
 columns from our feature table. We could apply cross fold validation `CV(nfolds=5)` with 
@@ -66,18 +72,18 @@ rfe = RecursiveFeatureElimination(model = forest)
 tuning_rfe_model  = TunedModel(
     model = rfe,
     measure = rms,
-    tuning = Grid(rng=rng, resolution=10),
-    resampling = CV(nfolds = 5),
+    tuning = Grid(rng=rng),
+    resampling = StratifiedCV(nfolds = 5),
     range = range(
-        rfe, :n_features_to_select, values = collect(2:8)
+        rfe, :n_features, lower = 1, upper=10, unit=1
     )
 )
 self_tuning_rfe_mach = machine(tuning_rfe_model, X, y)
 fit!(self_tuning_rfe_mach)
 ```
-As before we can inspect the important features by inspesting the `fitted_params` object.
+As before we can inspect the important features by inspecting the `fitted_params` object.
 ```julia
-fitted_parms(self_tuning_rfe_mach).best_model.features_left == [:x1, :x2, :x3, :x4, :x5]
+fitted_params(self_tuning_rfe_mach).best_fitted_params.features_left == [:x1, :x2, :x3, :x4, :x5]
 ```
 and call `predict` on the tuned model machine as shown below
 ```julia

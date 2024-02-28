@@ -11,11 +11,17 @@ const ERR_MODEL_TYPE = ArgumentError(
 )
 
 const ERR_FEATURE_IMPORTANCE_SUPPORT = ArgumentError(
-        "Model does not report feature importance, hence recursive feature algorithm "*
-        "can't be applied."
+    "Model does not report feature importance, hence recursive feature algorithm "*
+    "can't be applied."
 )
 
-const MODEL_TYPES = [:ProbabilisticRecursiveFeatureElimination, :DeterministicRecursiveFeatureElimination]
+const ERR_FEATURES_SEEN = ArgumentError(
+    "Features of new table must be same as those seen during fit process."
+)
+
+const MODEL_TYPES = [
+    :ProbabilisticRecursiveFeatureElimination, :DeterministicRecursiveFeatureElimination
+]
 const SUPER_TYPES = [:Deterministic, :Probabilistic]
 const MODELTYPE_GIVEN_SUPERTYPES = zip(MODEL_TYPES, SUPER_TYPES)
 
@@ -114,7 +120,9 @@ RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
 
 # Creates a dataset where the target only depends on the first 5 columns of the input table.
 A = rand(rng, 50, 10);
-y = 10 .* sin.(pi .* A[:, 1] .* A[:, 2]) + 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]);
+y = 10 .* sin.(
+        pi .* A[:, 1] .* A[:, 2]
+    ) + 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]);
 X = MLJ.table(A);
 
 # fit a rfe model
@@ -189,7 +197,9 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
     Xcols = Tables.Columns(X)
     features = collect(Tables.columnnames(Xcols))
     nfeatures = length(features)
-    nfeatures < 2 && throw(ArgumentError("The number of features in the feature matrix must be at least 2."))
+    nfeatures < 2 && throw(
+        ArgumentError("The number of features in the feature matrix must be at least 2.")
+    )
 
     # Compute required number of features to select
     n_features = selector.n_features # Remember to modify this estimate later
@@ -256,12 +266,12 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
     fitresult = (
         support = support,
         model_fitresult = model_fitresult,
-        features_left = copy(features_left)
+        features_left = copy(features_left),
+        features = features
     )
     report = ( 
         ranking = ranking,
-        model_report = model_report,
-        features = features
+        model_report = model_report
     )
 
     return fitresult, nothing, report
@@ -282,20 +292,27 @@ function MMI.predict(model::RFE, fitresult, X)
 end
 
 function MMI.transform(::RFE, fitresult, X)
+    sch = Tables.schema(Tables.columns(X))
+    if (length(fitresult.features) == length(sch.names) && 
+        !all(e -> e in sch.names, fitresult.features))
+        throw(
+            ERR_FEATURES_SEEN
+        )
+    end
     return MMI.selectcols(X, fitresult.features_left)
 end
 
 function MMI.feature_importances(::RFE, fitresult, report)
-    return Pair.(report.features, report.ranking)
+    return Pair.(fitresult.features, report.ranking)
 end
 
 ## Traits definitions
 function MMI.load_path(::Type{<:DeterministicRecursiveFeatureElimination})
-    return "FeatureEngineering.DeterministicRecursiveFeatureElimination"
+    return "FeatureSelection.DeterministicRecursiveFeatureElimination"
 end
 
 function MMI.load_path(::Type{<:ProbabilisticRecursiveFeatureElimination})
-    return "FeatureEngineering.ProbabilisticRecursiveFeatureElimination"
+    return "FeatureSelection.ProbabilisticRecursiveFeatureElimination"
 end
 
 for trait in [
@@ -323,13 +340,17 @@ end
 
 # ## Iteration parameter
 # at level of types:
+prepend(s::Symbol, ::Nothing) = nothing
+prepend(s::Symbol, t::Symbol) = Expr(:(.), s, QuoteNode(t))
+prepend(s::Symbol, ex::Expr) = Expr(:(.), prepend(s, ex.args[1]), ex.args[2])
+
 function MMI.iteration_parameter(::Type{<:RFE{M}}) where {M}
-    return MLJModels.prepend(:model, MMI.iteration_parameter(M))
+    return prepend(:model, MMI.iteration_parameter(M))
 end
 
 # at level of instances:
 function MMI.iteration_parameter(model::RFE)
-    return MLJModels.prepend(:model, MMI.iteration_parameter(model.model))
+    return prepend(:model, MMI.iteration_parameter(model.model))
 end
 
 ## TRAINING LOSSES SUPPORT
