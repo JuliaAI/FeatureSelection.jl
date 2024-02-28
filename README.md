@@ -17,7 +17,8 @@ Pkg.add("FeatureSelection")
 ```
 
 # Example Usage
-Lets build a supervised recursive feature eliminator with `RandomForestRegressor` from `MLJDecisionTreeInterface` as our base model.
+Lets build a supervised recursive feature eliminator with `RandomForestRegressor` 
+from DecisionTree.jl as our base model.
 But first we need a dataset to train on. We shall create a synthetic dataset popularly known in the R community as the friedman dataset#1. Notice how the target vector for this dataset depends on only the first 
 five columns of feature table. So we expect that our recursive feature elimination should return the first
 columns as important features.
@@ -46,13 +47,15 @@ We can view the important features by inspecting the `fitted_params` object.
 p = fitted_params(mach)
 p.features_left == [:x1, :x2, :x3, :x4, :x5]
 ```
-We can even call `predict` and `transform` om the fitted machine. See example 
+We can also call `predict` on the fitted machine, to predict using a 
+random forest regressor trained just on those features, or call `transform`, to 
+select just those features some new table including all the original features.
 in `?RecursiveFeatureElimination`.
 
 Okay, let's say that we didn't know that our synthetic dataset depends on only five 
 columns from our feature table. We could apply cross fold validation `CV(nfolds=5)` with our 
 recursive feature elimination model to select the optimal value of  
-`n_features_to_select` for our model. In this case we will use a simple Grid search with 
+`n_features` for our model. In this case we will use a simple Grid search with 
 root mean square as the measure. 
 ```julia
 rfe = RecursiveFeatureElimination(model = forest)
@@ -70,7 +73,7 @@ fit!(self_tuning_rfe_mach)
 ```
 As before we can inspect the important features by inspesting the `fitted_params` object.
 ```julia
-fitted_parms(self_tuning_rfe_mach).features_left == [:x1, :x2, :x3, :x4, :x5]
+fitted_parms(self_tuning_rfe_mach).best_model.features_left == [:x1, :x2, :x3, :x4, :x5]
 ```
 and call `predict` on the tuned model machine as shown below
 ```julia
