@@ -46,8 +46,7 @@ rfe = RecursiveFeatureElimination(
 mach = machine(rfe, X, y)
 fit!(mach)
 ```
-If we wish, we can get the feature importance scores, either by inspecting `report(mach)` 
-or calling the `feature_importances` function on the fitted machine as shown below
+We can inspect the feature importances in two ways:
 ```julia
 report(mach).ranking # returns [1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 feature_importances(mach) # returns dict of feature => rank pairs
@@ -93,5 +92,7 @@ predict(self_tuning_rfe_mach, Xnew)
 In this case, prediction is done using the best recursive feature elimination model gotten 
 from the tuning process above.
 
-For more information various cross-validation strategies and `TunedModel` see 
+For resampling methods different from cross-validation, and for other
+ `TunedModel` options, such as parallelization, see the 
+ [Tuning Models](https://alan-turing-institute.github.io/MLJ.jl/dev/tuning_models/) section of the MLJ manual.
 [MLJ Documentation](https://alan-turing-institute.github.io/MLJ.jl/dev/)
