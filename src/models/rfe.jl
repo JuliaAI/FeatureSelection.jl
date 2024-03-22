@@ -202,34 +202,35 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
     )
 
     # Compute required number of features to select
-    n_features = selector.n_features # Remember to modify this estimate later
+    n_features_select = selector.n_features
     ## zero indicates that half of the features be selected.
-    if n_features == 0
-        n_features = div(nfeatures, 2) 
-    elseif 0 < n_features < 1
-        n_features = round(Int, n_features * n_features)
+    if n_features_select == 0
+        n_features_select = div(nfeatures, 2) 
+    elseif 0 < n_features_select < 1
+        n_features_select = round(Int, n_features_select * nfeatures)
     else
-        n_features = round(Int, n_features)
+        n_features_select = round(Int, n_features_select)
     end
 
     step = selector.step
     
     if 0 < step < 1
-        step = round(Int, max(1, step * n_features))
+        step = round(Int, max(1, step * n_features_select))
     else
         step = round(Int, step) 
     end
     
     support = trues(nfeatures)
-    ranking = ones(nfeatures) # every feature has equal rank initially
-    indexes  = axes(support, 1)
+    ranking = ones(Int, nfeatures) # every feature has equal rank initially
+    mask = trues(nfeatures) # for boolean indexing of ranking vector in while loop below
 
     # Elimination
-    features_left = copy(features)
-    while sum(support) > n_features
+    features_left = features
+    n_features_left = length(features_left)
+    while n_features_left > n_features_select
         # Rank the remaining features
         model = selector.model
-        verbosity > 0 && @info("Fitting estimator with $(sum(support)) features.")
+        verbosity > 0 && @info("Fitting estimator with $(n_features_left) features.")
     
         data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
 
@@ -249,24 +250,25 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
         ranks = sortperm(importances)
 
         # Eliminate the worse features
-        threshold = min(step, sum(support) - n_features)
-        
-        support[indexes[ranks][1:threshold]] .= false
-        ranking[.!support] .+= 1
+        threshold = min(step, n_features_left - n_features_select)
+        @views(support[support][ranks[1:threshold]]) .= false
+        mask .= support .== false
+        @views(ranking[mask]) .+= 1
 
         # Remaining features
-        features_left = @view(features[support])
+        features_left = features[support]
+        n_features_left = length(features_left)
     end
 
     # Set final attributes
     data = MMI.reformat(selector.model, MMI.selectcols(X, features_left), args...)
-    verbosity > 0 && @info ("Fitting estimator with $(sum(support)) features.")
+    verbosity > 0 && @info ("Fitting estimator with $(n_features_left) features.")
     model_fitresult, _, model_report = MMI.fit(selector.model, verbosity - 1, data...)
     
     fitresult = (
         support = support,
         model_fitresult = model_fitresult,
-        features_left = copy(features_left),
+        features_left = features_left,
         features = features
     )
     report = ( 
@@ -280,7 +282,7 @@ end
 
 function MMI.fitted_params(model::RFE, fitresult)
     (
-        features_left = fitresult.features_left,
+        features_left = copy(fitresult.features_left),
         model_fitresult = MMI.fitted_params(model.model, fitresult.model_fitresult)
     )
 end
@@ -295,15 +297,45 @@ function MMI.transform(::RFE, fitresult, X)
     sch = Tables.schema(Tables.columns(X))
     if (length(fitresult.features) == length(sch.names) && 
         !all(e -> e in sch.names, fitresult.features))
-        throw(
-            ERR_FEATURES_SEEN
-        )
+            throw(
+                ERR_FEATURES_SEEN
+            )
     end
     return MMI.selectcols(X, fitresult.features_left)
 end
 
 function MMI.feature_importances(::RFE, fitresult, report)
-    return Pair.(fitresult.features, report.ranking)
+    return Pair.(fitresult.features, Iterators.reverse(report.ranking))
+end
+
+function MMI.save(model::RFE, fitresult)
+    support = fitresult.support
+    atomic_fitresult = fitresult.model_fitresult
+    features_left = fitresult.features_left
+    features = fitresult.features
+    
+    atom = model.model
+    return (
+        support = copy(support),
+        model_fitresult = MMI.save(atom, atomic_fitresult),
+        features_left = copy(features_left),
+        features = copy(features)
+    )
+end
+
+function MMI.restore(model::RFE, serializable_fitresult)
+    support = serializable_fitresult.support
+    atomic_serializable_fitresult = serializable_fitresult.model_fitresult
+    features_left = serializable_fitresult.features_left
+    features = serializable_fitresult.features
+
+    atom = model.model
+    return (
+        support = support,
+        model_fitresult = MMI.restore(atom, atomic_serializable_fitresult),
+        features_left = features_left,
+        features = features
+    )
 end
 
 ## Traits definitions

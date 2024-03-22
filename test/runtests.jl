@@ -1,4 +1,5 @@
-using FeatureSelection, MLJBase, MLJDecisionTreeInterface, StableRNGs, Test
+using FeatureSelection, MLJBase, MLJTuning, MLJDecisionTreeInterface, 
+    MLJScikitLearnInterface, StableRNGs, StatisticalMeasures, Test
 import Distributions
 
 const rng = StableRNG(123)
