@@ -31,11 +31,12 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - name: "Replace julia libstdcxx ubuntu + julia v1.6"
+        shell: bash
         if: ${{ matrix.version == '1.6' && matrix.os == 'ubuntu-latest' }}
         # The following is needed for Julia <=1.8.3 on Linux OS 
         # due to old version of libstcxx used by Julia
         # taken from https://github.com/hhaensel/ReplaceLibstdcxx.jl/blob/main/src/ReplaceLibstdcxx.jl
-      - run: |
+        run: |
               julia -e '
                 libs = filter(x -> ! occursin("32", x), getindex.(split.(readlines(pipeline(`ldconfig -p`, `grep libstdc`)), r"\s*=>\s*"), 2))
                 source_dir = dirname(libs[end])
