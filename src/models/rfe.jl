@@ -139,7 +139,6 @@ Xnew = MLJ.table(rand(rng, 50, 10));
 predict(mach, Xnew)
 
 ```
-
 """
 function RecursiveFeatureElimination(
     args...;
