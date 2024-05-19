@@ -6,16 +6,17 @@ makedocs(;
         Sebastian Vollmer <s.vollmer.4@warwick.ac.uk>, 
         Okon Samuel <okonsamuel50@gmail.com>
         """,
-    #format = Documenter.HTML(;
-    #    prettyurls= get(ENV, "CI", "false") == "true"
-    #),
-    #modules = [FeatureSelection],
+    format = Documenter.HTML(;
+        prettyurls= get(ENV, "CI", "false") == "true",
+        edit_link = "dev"
+    ),
+    modules = [FeatureSelection],
     pages=[
         "Home" => "index.md",
         "API" => "api.md"
     ],
     doctest = false, # don't runt doctest as doctests are automatically run separately in ci.
-    repo = "https://github.com/JuliaAI/FeatureSelection/blob/{commit}{path}#L{line}",
+    repo = Remotes.GitHub("JuliaAI", "FeatureSelection.jl"),
     sitename = "FeatureSelection.jl",
 )
 
