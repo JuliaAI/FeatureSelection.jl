@@ -47,17 +47,17 @@ It recursively removes features, training a base model on the remaining features
 evaluating their importance until the desired number of features is selected.
 
 Construct an instance with default hyper-parameters using the syntax 
-`model = RecursiveFeatureElimination(model=...)`. Provide keyword arguments to override 
+`rfe_model = RecursiveFeatureElimination(model=...)`. Provide keyword arguments to override 
 hyper-parameter defaults.  
         
 # Training data
-In MLJ or MLJBase, bind an instance `model` to data with
+In MLJ or MLJBase, bind an instance `rfe_model` to data with
 
-    mach = machine(model, X, y)
+    mach = machine(rfe_model, X, y)
 
 OR, if the base model supports weights, as
 
-    mach = machine(model, X, y, w)
+    mach = machine(rfe_model, X, y, w)
 
 Here:
 
@@ -388,3 +388,16 @@ end
 function MMI.training_losses(model::RFE, rfe_report)
     return MMI.training_losses(model.model, rfe_report.model_report)
 end
+
+## Pkg Traits
+MMI.metadata_pkg.(
+    (
+        DeterministicRecursiveFeatureElimination,
+        ProbabilisticRecursiveFeatureElimination, 
+    ),
+    package_name       = "FeatureSelection",
+    package_uuid       = "33837fe5-dbff-4c9e-8c2f-c5612fe2b8b6",
+    package_url        = "https://github.com/JuliaAI/FeatureSelection.jl",
+    is_pure_julia      = true,
+    package_license    = "MIT"
+)
