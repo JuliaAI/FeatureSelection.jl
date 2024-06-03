@@ -17,12 +17,15 @@ const DTM = DummyTestModels
     @test_throws FeatureSelection.ERR_SPECIFY_MODEL RecursiveFeatureElimination()
     reg = DTM.DeterministicConstantRegressor()
     @test_throws(
-        FeatureSelection.ERR_FEATURE_IMPORTANCE_SUPPORT, 
+        FeatureSelection.ERR_FEATURE_IMPORTANCE_SUPPORT,
         RecursiveFeatureElimination(model = DTM.DeterministicConstantRegressor())
     )
     rf = MLJDecisionTreeInterface.RandomForestRegressor(rng = rng)
     selector = RecursiveFeatureElimination(model = rf)
     @test selector isa FeatureSelection.DeterministicRecursiveFeatureElimination
+    @test MLJBase.constructor(selector) == RecursiveFeatureElimination
+    @test MLJBase.package_name(selector) == "FeatureSelection"
+    @test MLJBase.load_path(selector) == "FeatureSelection.RecursiveFeatureElimination"
 
     # Fit
     selector_mach = machine(selector, Xt, y)
@@ -34,7 +37,7 @@ const DTM = DummyTestModels
         selector_mach.model.model, selector_mach.fitresult.model_fitresult
     )
     @test feature_importances(selector_mach) == [
-        :x1 => 6.0, :x2 => 5.0, :x3 => 4.0, :x4 => 3.0, :x5 => 2.0, 
+        :x1 => 6.0, :x2 => 5.0, :x3 => 4.0, :x4 => 3.0, :x5 => 2.0,
         :x6 => 1.0, :x7 => 1.0, :x8 => 1.0, :x9 => 1.0, :x10 => 1.0
     ]
     rpt = report(selector_mach)
@@ -94,7 +97,7 @@ end
         measure = rms,
         tuning = Grid(rng=rng),
         resampling = StratifiedCV(nfolds = 5),
-        range = range(rfecv, :n_features, values = 1:10)                                                                                                           
+        range = range(rfecv, :n_features, values = 1:10)
     )
     self_tuning_rfe_mach = machine(tuning_rfe_model, Xs, ys)
     fit!(self_tuning_rfe_mach)
