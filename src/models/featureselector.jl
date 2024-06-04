@@ -84,9 +84,20 @@ MMI.metadata_model(
     FeatureSelector,
     input_scitype = Table,
     output_scitype = Table,
-    load_path = "FeatureSelction.FeatureSelector"
+    load_path = "FeatureSelection.FeatureSelector"
 )
 
+## Pkg Traits
+MMI.metadata_pkg(
+    FeatureSelector,
+    package_name = "FeatureSelection",
+    package_uuid = "33837fe5-dbff-4c9e-8c2f-c5612fe2b8b6",
+    package_url = "https://github.com/JuliaAI/FeatureSelection.jl",
+    is_pure_julia = true,
+    package_license = "MIT"
+)
+
+## Docstring
 """
 $(MMI.doc_header(FeatureSelector))
 
