@@ -1,7 +1,7 @@
 name = "FeatureSelection"
 uuid = "33837fe5-dbff-4c9e-8c2f-c5612fe2b8b6"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>", "Samuel Okon <okonsamuel50@gmail.com"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
@@ -12,11 +12,11 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Aqua = "0.8"
 Distributions = "0.25"
 julia = "1.6"
-MLJBase = "1.1"
+MLJBase = "1.4"
 MLJTuning = "0.8"
 MLJDecisionTreeInterface = "0.4"
 MLJScikitLearnInterface = "0.6"
-MLJModelInterface = "1.4"
+MLJModelInterface = "1.10"
 ScientificTypesBase = "3"
 StableRNGs = "1"
 StatisticalMeasures = "0.1"
