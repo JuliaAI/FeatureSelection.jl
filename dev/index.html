@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · FeatureSelection.jl</title><meta name="title" content="Home · FeatureSelection.jl"/><meta property="og:title" content="Home · FeatureSelection.jl"/><meta property="twitter:title" content="Home · FeatureSelection.jl"/><meta name="description" content="Documentation for FeatureSelection.jl."/><meta property="og:description" content="Documentation for FeatureSelection.jl."/><meta property="twitter:description" content="Documentation for FeatureSelection.jl."/><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="search_index.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>FeatureSelection.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li class="toplevel"><a class="tocitem" href="#Example-Usage"><span>Example Usage</span></a></li></ul></li><li><a class="tocitem" href="api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaAI/FeatureSelection.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaAI/FeatureSelection.jl/blob/dev/docs/src/index.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="FeatureSelection"><a class="docs-heading-anchor" href="#FeatureSelection">FeatureSelection</a><a id="FeatureSelection-1"></a><a class="docs-heading-anchor-permalink" href="#FeatureSelection" title="Permalink"></a></h1><p>FeatureSelction is a julia package containing implementations of feature selection algorithms for use with the machine learning toolbox <a href="https://juliaai.github.io/MLJ.jl/dev/">MLJ</a>.</p><h1 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h1><p>On a running instance of Julia with at least version 1.6 run</p><pre><code class="language-julia hljs">import Pkg;
+Pkg.add(&quot;FeatureSelection&quot;)</code></pre><h1 id="Example-Usage"><a class="docs-heading-anchor" href="#Example-Usage">Example Usage</a><a id="Example-Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Example-Usage" title="Permalink"></a></h1><p>Lets build a supervised recursive feature eliminator with <code>RandomForestRegressor</code>  from <a href="https://github.com/JuliaAI/DecisionTree.jl">DecisionTree.jl</a> as our base model. But first we need a dataset to train on. We shall create a synthetic dataset popularly  known in the R community as the friedman dataset#1. Notice how the target vector for this  dataset depends on only the first five columns of feature table. So we expect that our  recursive feature elimination should return the first columns as important features.</p><pre><code class="language-julia hljs">using MLJ, FeatureSelection, StableRNGs
+rng = StableRNG(10)
+A = rand(rng, 50, 10)
+X = MLJ.table(A) # features
+y = @views(
+    10 .* sin.(
+        pi .* A[:, 1] .* A[:, 2]
+    ) .+ 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]
+) # target</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">50-element Vector{Float64}:
+ 14.757750141627872
+  5.6289211816018
+  7.50111702156409
+  8.287787194802474
+  8.155270707632388
+ 11.918811173916108
+ 14.371820831057564
+ 12.290640141464566
+ 13.521515955060561
+ 17.256110024539645
+  ⋮
+ 17.512350928159393
+ 14.411846214781345
+ 14.5841719745511
+ 19.356070717454756
+  7.952960057925513
+ 19.654024514692342
+ 17.193108924670483
+ 11.080955197310711
+ 10.872734089114743</code></pre><p>Now we that we have our data, we can create our recursive feature elimination model and  train it on our dataset</p><pre><code class="language-julia hljs">RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
+forest = RandomForestRegressor(rng=rng)
+rfe = RecursiveFeatureElimination(
+    model = forest, n_features=5, step=1
+) # see doctring for description of defaults
+mach = machine(rfe, X, y)
+fit!(mach)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">trained Machine; caches model-specific representations of data
+  model: DeterministicRecursiveFeatureElimination(model = RandomForestRegressor(max_depth = -1, …), …)
+  args: 
+    1:	Source @830 ⏎ ScientificTypesBase.Table{AbstractVector{ScientificTypesBase.Continuous}}
+    2:	Source @050 ⏎ AbstractVector{ScientificTypesBase.Continuous}
+</code></pre><p>We can inspect the feature importances in two ways:</p><pre><code class="language-julia-repl hljs">julia&gt; report(mach).ranking
+10-element Vector{Int64}:
+ 1
+ 1
+ 1
+ 1
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+
+julia&gt; feature_importances(mach)
+10-element Vector{Pair{Symbol, Int64}}:
+  :x1 =&gt; 6
+  :x2 =&gt; 5
+  :x3 =&gt; 4
+  :x4 =&gt; 3
+  :x5 =&gt; 2
+  :x6 =&gt; 1
+  :x7 =&gt; 1
+  :x8 =&gt; 1
+  :x9 =&gt; 1
+ :x10 =&gt; 1</code></pre><p>Note that a variable with lower rank has more significance than a variable with higher rank; while a variable with higher feature importance is better than a variable with lower feature importance.</p><p>We can view the important features used by our model by inspecting the <code>fitted_params</code>  object.</p><pre><code class="language-julia-repl hljs">julia&gt; p = fitted_params(mach)
+(features_left = [:x1, :x2, :x3, :x4, :x5],
+ model_fitresult = (forest = Ensemble of Decision Trees
+Trees:      100
+Avg Leaves: 25.26
+Avg Depth:  8.36,),)
+
+julia&gt; p.features_left
+5-element Vector{Symbol}:
+ :x1
+ :x2
+ :x3
+ :x4
+ :x5</code></pre><p>We can also call the <code>predict</code> method on the fitted machine, to predict using a  random forest regressor trained using only the important features, or call the <code>transform</code>  method, to select just those features from some new table including all the original  features. For more info, type <code>?RecursiveFeatureElimination</code> on a Julia REPL.</p><p>Okay, let&#39;s say that we didn&#39;t know that our synthetic dataset depends on only five  columns from our feature table. We could apply cross fold validation  <code>StratifiedCV(nfolds=5)</code> with our recursive feature elimination model to select the  optimal value of <code>n_features</code> for our model. In this case we will use a simple Grid  search with root mean square as the measure. </p><pre><code class="language-julia hljs">rfe = RecursiveFeatureElimination(model = forest)
+tuning_rfe_model  = TunedModel(
+    model = rfe,
+    measure = rms,
+    tuning = Grid(rng=rng),
+    resampling = StratifiedCV(nfolds = 5),
+    range = range(
+        rfe, :n_features, values = 1:10
+    )
+)
+self_tuning_rfe_mach = machine(tuning_rfe_model, X, y)
+fit!(self_tuning_rfe_mach)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">trained Machine; does not cache data
+  model: ProbabilisticTunedModel(model = DeterministicRecursiveFeatureElimination(model = RandomForestRegressor(max_depth = -1, …), …), …)
+  args: 
+    1:	Source @249 ⏎ ScientificTypesBase.Table{AbstractVector{ScientificTypesBase.Continuous}}
+    2:	Source @461 ⏎ AbstractVector{ScientificTypesBase.Continuous}
+</code></pre><p>As before we can inspect the important features by inspecting the object returned by  <code>fitted_params</code> or <code>feature_importances</code> as shown below.</p><pre><code class="language-julia-repl hljs">julia&gt; fitted_params(self_tuning_rfe_mach).best_fitted_params.features_left
+5-element Vector{Symbol}:
+ :x1
+ :x2
+ :x3
+ :x4
+ :x5
+
+julia&gt; feature_importances(self_tuning_rfe_mach)
+10-element Vector{Pair{Symbol, Int64}}:
+  :x1 =&gt; 6
+  :x2 =&gt; 5
+  :x3 =&gt; 4
+  :x4 =&gt; 3
+  :x5 =&gt; 2
+  :x6 =&gt; 1
+  :x7 =&gt; 1
+  :x8 =&gt; 1
+  :x9 =&gt; 1
+ :x10 =&gt; 1</code></pre><p>and call <code>predict</code> on the tuned model machine as shown below</p><pre><code class="language-julia hljs">Xnew = MLJ.table(rand(rng, 50, 10)) # create test data
+predict(self_tuning_rfe_mach, Xnew)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">50-element Vector{Float64}:
+ 12.238525482390008
+ 16.158622319269437
+ 16.017607054928387
+ 14.166314485871487
+ 10.088211355668514
+ 15.798694543344565
+ 12.07575610393583
+ 12.82815566222855
+ 13.116295391498682
+ 11.383302781047503
+  ⋮
+ 17.425927559473635
+ 15.924516994992011
+ 15.349685201961329
+ 17.32950191557107
+ 17.424341851916626
+ 14.269694390601222
+ 15.803581443461514
+ 12.609899938006151
+ 14.172499897081211</code></pre><p>In this case, prediction is done using the best recursive feature elimination model gotten  from the tuning process above.</p><p>For resampling methods different from cross-validation, and for other  <code>TunedModel</code> options, such as parallelization, see the   <a href="https://juliaai.github.io/MLJ.jl/dev/tuning_models/">Tuning Models</a> section of the MLJ manual. <a href="https://juliaai.github.io/MLJ.jl/dev/">MLJ Documentation</a></p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.5.0 on <span class="colophon-date" title="Sunday 30 June 2024 20:04">Sunday 30 June 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
