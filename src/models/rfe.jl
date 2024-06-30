@@ -349,7 +349,6 @@ for trait in [
     :supports_weights,
     :supports_class_weights,
     :is_pure_julia,
-    :is_wrapper,
     :input_scitype,
     :target_scitype,
     :output_scitype,
