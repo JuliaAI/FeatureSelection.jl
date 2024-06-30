@@ -61,7 +61,7 @@ y = @views(
     ) .+ 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]
 ) # target
 ```
-Now we that we have our data we can create our recursive feature elimination model and 
+Now we that we have our data, we can create our recursive feature elimination model and 
 train it on our dataset
 ```@example example1
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
@@ -100,7 +100,7 @@ julia> feature_importances(mach)
   :x9 => 1
  :x10 => 1
 ```
-Note that a variable with lower rank has more significance than a variable with higher rank while a variable with higher feature importance is better than a variable with lower feature importance.
+Note that a variable with lower rank has more significance than a variable with higher rank; while a variable with higher feature importance is better than a variable with lower feature importance.
 
 We can view the important features used by our model by inspecting the `fitted_params` 
 object.

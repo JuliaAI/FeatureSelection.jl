@@ -46,7 +46,7 @@ eval(:(const RFE{M} =
 This model implements a recursive feature elimination algorithm for feature selection.
 It recursively removes features, training a base model on the remaining features and
 evaluating their importance until the desired number of features is selected.
-
+       
 Construct an instance with default hyper-parameters using the syntax
 `rfe_model = RecursiveFeatureElimination(model=...)`. Provide keyword arguments to override
 hyper-parameter defaults.
