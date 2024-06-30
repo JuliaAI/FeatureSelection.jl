@@ -125,9 +125,9 @@ jobs:
           julia --project=docs -e '
             if ENV["BUILD_DOCS"] == "true"
                 using Documenter: doctest
-                using MLJBase
+                using FeatureSelection
                 @info "attempting to run the doctests"
-                doctest(MLJBase)
+                doctest(FeatureSelection)
             else
                 @info "skipping the doctests"
             end'
