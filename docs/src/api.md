@@ -9,6 +9,6 @@ RecursiveFeatureElimination
 ```
 # Internal Utils
 ```@docs
-FeatureSelection.abs_last
-FeatureSelection.score_features!
+abs_last
+score_features!
 ```
