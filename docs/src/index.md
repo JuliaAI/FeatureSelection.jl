@@ -20,7 +20,7 @@ recursive feature elimination should return the first columns as important featu
 ```@meta
 DocTestSetup = quote
   using MLJ, FeatureSelection, StableRNGs
-  rng = StableRNG(10)
+  rng = StableRNG(123)
   A = rand(rng, 50, 10)
   X = MLJ.table(A) # features
   y = @views(
@@ -147,11 +147,11 @@ As before we can inspect the important features by inspecting the object returne
 ```jldoctest
 julia> fitted_params(self_tuning_rfe_mach).best_fitted_params.features_left
 5-element Vector{Symbol}:
- :x1
- :x2
- :x3
  :x4
+ :x2
+ :x1
  :x5
+ :x3
 
 julia> feature_importances(self_tuning_rfe_mach)
 10-element Vector{Pair{Symbol, Int64}}:
@@ -163,7 +163,7 @@ julia> feature_importances(self_tuning_rfe_mach)
   :x3 => 6
   :x8 => 5
   :x4 => 6
-  :x10 => 3
+ :x10 => 3
   :x1 => 6
 ```
 and call `predict` on the tuned model machine as shown below
