@@ -2,7 +2,7 @@
 
 | Linux | Coverage | Documentation | Code Style
 | :------------ | :------- | :------------- | :------------- |
-| [![Build Status](https://github.com/JuliaAI/FeatureSelection.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/FeatureSelection.jl/actions) | [![Coverage](https://codecov.io/gh/JuliaAI/FeatureSelection.jl/branch/master/graph/badge.svg)](https://codecov.io/github/JuliaAI/FeatureSelection.jl?branch=dev) | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaai.github.io/FeatureSelection.jl/dev/) | [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle) |
+| [![Build Status](https://github.com/JuliaAI/FeatureSelection.jl/workflows/CI/badge.svg)](https://github.com/JuliaAI/FeatureSelection.jl/actions) | [![Coverage](https://codecov.io/gh/JuliaAI/FeatureSelection.jl/branch/dev/graph/badge.svg)](https://codecov.io/github/JuliaAI/FeatureSelection.jl?branch=dev) | [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliaai.github.io/FeatureSelection.jl/dev/) | [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle) |
 
 Repository housing feature selection algorithms for use with the machine learning toolbox [MLJ](https://juliaai.github.io/MLJ.jl/dev/).
 
