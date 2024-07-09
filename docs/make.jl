@@ -30,5 +30,6 @@ makedocs(;
 deploydocs(;
     deploy_config = Documenter.GitHubActions(),
     repo="github.com/JuliaAI/FeatureSelection.jl.git",
+    devbranch="dev",
     push_preview=true
 )
