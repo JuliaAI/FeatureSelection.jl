@@ -107,11 +107,11 @@ The fields of `fitted_params(mach)` are:
 
 # Report
 The fields of `report(mach)` are:
-- `ranking`: The feature ranking of each features in the training dataset.
+- `scores`: dictionary of scores for each feature in the training dataset.
+  The model deems highly scored variable more significant. 
 
 - `model_report`: report for the fitted base model.
 
-- `features`: names of features seen during the training process.
 
 # Examples
 ```
@@ -170,7 +170,10 @@ function RecursiveFeatureElimination(
             model, Float64(n_features), Float64(step)
         )
     else
-        throw(ERR_MODEL_TYPE)
+        # This branch is hit just incase there are any models that supports_class_weights
+        # feature importance that aren't `<:Probabilistic` or `<:Deterministic`
+        # which is rare.
+        throw(ERR_MODEL_TYPE) 
     end
     message = MMI.clean!(selector)
     isempty(message) || @warn(message)
@@ -180,19 +183,74 @@ end
 function MMI.clean!(selector::RFE)
     msg = ""
     if selector.step <= 0
-        msg *= "specified `step` must be greater than zero.\n"
-        "Resetting `step = 1`"
+        msg *= "Specified `step` must be greater than zero.\n"*
+        "Resetting `step = 1`\n"
     end
 
     if selector.n_features < 0
-        msg *= "specified `step` must be non-negative.\n"*
-        "Resetting `n_features = 0`"
+        msg *= "Specified `n_features` must be non-negative.\n"*
+        "Resetting `n_features = 0`\n"
     end
 
     return msg
 end
 
+"""
+    abs_last(x)
+
+Get the absolute value of the second element in a `Pair` object `x`.
+
+# Arguments
+- `x::Pair{<:Any, <:Real}`: A `Pair` object from which the absolute value of the second element is to be retrieved.
+
+# Example
+```julia
+julia> abs_last(1 => -5)
+5
+```
+"""
+abs_last(x::Pair{<:Any, <:Real}) = abs(last(x))
+
+"""
+    score_features!(scores_dict, features, importances, n_features_to_score)
+
+Internal method that updates the `scores_dict` by increasing the score for each feature based on their 
+importance and store the features in the `features` array.
+
+# Arguments
+- `scores_dict::Dict{Symbol, Int}`: A dictionary where the keys are features and 
+  the values are their corresponding scores.
+- `features::Vector{Symbol}`: An array to store the top features based on importance.
+- `importances::Vector{Pair(Symbol, <:Real)}}`: An array of tuples where each tuple 
+  contains a feature and its importance score. 
+- `n_features_to_score::Int`: The number of top features to score and store.
+
+# Notes
+Ensure that `n_features_to_score` is less than or equal to the minimum of the 
+lengths of `features` and `importances`.
+
+# Example
+```julia
+scores_dict = Dict(:feature1 => 0, :feature2 => 0, :feature3 => 0)
+features = [:x1, :x1, :x1]
+importances = [:feature1 => 0.9, :feature2 => 0.8, :feature3 => 0.7]
+n_features_to_score = 2
+
+score_features!(scores_dict, features, importances, n_features_to_score)
+scores_dict == Dict(:feature1 => 1, :feature2 => 1, :feature3 => 0)
+features == [:feature1, :feature2, :x1]
+```
+"""
+function score_features!(scores_dict, features, importances, n_features_to_score)
+    for i in Base.OneTo(n_features_to_score)
+        ftr = first(importances[i])
+        features[i] = ftr 
+        scores_dict[ftr] += 1
+    end
+end
+
 function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
+    model = selector.model
     args = (y, args...)
     Xcols = Tables.Columns(X)
     features = collect(Tables.columnnames(Xcols))
@@ -207,72 +265,70 @@ function MMI.fit(selector::RFE, verbosity::Int, X, y, args...)
     if n_features_select == 0
         n_features_select = div(nfeatures, 2)
     elseif 0 < n_features_select < 1
-        n_features_select = round(Int, n_features_select * nfeatures)
+        n_features_select = round(Int, max(1, n_features_select * nfeatures), RoundDown)
     else
-        n_features_select = round(Int, n_features_select)
+        n_features_select = round(Int, n_features_select, RoundDown)
+        if n_features_select > nfeatures
+            @warn(
+                "n_features > number of features in training data, "*
+                "hence no feature will be eliminated."
+            )
+        end 
     end
 
-    step = selector.step
+    _step = selector.step
 
-    if 0 < step < 1
-        step = round(Int, max(1, step * n_features_select))
+    if 0 < _step < 1
+        step = round(Int, max(1, _step * nfeatures), RoundDown)
     else
-        step = round(Int, step)
+        step = round(Int, _step, RoundDown)
     end
 
-    support = trues(nfeatures)
-    ranking = ones(Int, nfeatures) # every feature has equal rank initially
-    mask = trues(nfeatures) # for boolean indexing of ranking vector in while loop below
+    scores = Dict([(ftr, 1) for ftr in features]) # every feature has equal score of 1 initially
 
     # Elimination
-    features_left = features
-    n_features_left = length(features_left)
-    while n_features_left > n_features_select
-        # Rank the remaining features
+    _features = copy(features) # temporary variable to hold features in while loop.
+    n_features_to_keep = nfeatures
+    features_left = @view(_features[1:n_features_to_keep])
+    while n_features_to_keep > n_features_select
+        # Get scores for the remaining features
         model = selector.model
-        verbosity > 0 && @info("Fitting estimator with $(n_features_left) features.")
-
+        verbosity > 0 && @info("Fitting estimator with $(n_features_to_keep) features.")
         data = MMI.reformat(model, MMI.selectcols(X, features_left), args...)
-
         fitresult, _, report = MMI.fit(model, verbosity - 1, data...)
+        # Note that the MLJ feature importance API does not impose any restrictions on the 
+        # ordering of `feature => score` pairs in the `importances` vector. 
+        # Therefore, the order of `feature => score` pairs in the `importances` vector
+        # might differ from the order of features in the `features` vector, which is 
+        # extracted from the feature matrix `X` above. Hence the need for a dictionary
+        # implementation.
+        importances = MMI.feature_importances(
+            selector.model,
+            fitresult,
+            report
+        ) 
 
-        # Get absolute values of importance and rank them
-        importances = abs.(
-            last.(
-                MMI.feature_importances(
-                    selector.model,
-                    fitresult,
-                    report
-                )
-            )
-        )
-
-        ranks = sortperm(importances)
-
-        # Eliminate the worse features
-        threshold = min(step, n_features_left - n_features_select)
-        @views(support[support][ranks[1:threshold]]) .= false
-        mask .= support .== false
-        @views(ranking[mask]) .+= 1
-
-        # Remaining features
-        features_left = features[support]
-        n_features_left = length(features_left)
+        # Eliminate the worse features and increase score of remaining features
+        sort!(importances, by=abs_last, rev = true)
+        n_features_to_keep = max(n_features_to_keep - step, n_features_select)
+        score_features!(scores, _features, importances, n_features_to_keep)
+        features_left = @view(_features[1:n_features_to_keep])
+        n_features_to_keep = length(features_left)
     end
 
     # Set final attributes
     data = MMI.reformat(selector.model, MMI.selectcols(X, features_left), args...)
-    verbosity > 0 && @info ("Fitting estimator with $(n_features_left) features.")
+    verbosity > 0 && @info ("Fitting estimator with $(n_features_to_keep) features.")
     model_fitresult, _, model_report = MMI.fit(selector.model, verbosity - 1, data...)
 
     fitresult = (
-        support = support,
         model_fitresult = model_fitresult,
         features_left = features_left,
         features = features
     )
+
     report = (
-        ranking = ranking,
+        scores = scores,
         model_report = model_report
     )
 
@@ -305,18 +361,16 @@ function MMI.transform(::RFE, fitresult, X)
 end
 
 function MMI.feature_importances(::RFE, fitresult, report)
-    return Pair.(fitresult.features, Iterators.reverse(report.ranking))
+    return collect(report.scores)
 end
 
 function MMI.save(model::RFE, fitresult)
-    support = fitresult.support
     atomic_fitresult = fitresult.model_fitresult
     features_left = fitresult.features_left
     features = fitresult.features
 
     atom = model.model
     return (
-        support = copy(support),
         model_fitresult = MMI.save(atom, atomic_fitresult),
         features_left = copy(features_left),
         features = copy(features)
@@ -324,14 +378,12 @@ function MMI.save(model::RFE, fitresult)
 end
 
 function MMI.restore(model::RFE, serializable_fitresult)
-    support = serializable_fitresult.support
     atomic_serializable_fitresult = serializable_fitresult.model_fitresult
     features_left = serializable_fitresult.features_left
     features = serializable_fitresult.features
 
     atom = model.model
     return (
-        support = support,
         model_fitresult = MMI.restore(atom, atomic_serializable_fitresult),
         features_left = features_left,
         features = features
