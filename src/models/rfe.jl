@@ -108,7 +108,7 @@ The fields of `fitted_params(mach)` are:
 # Report
 The fields of `report(mach)` are:
 - `scores`: dictionary of scores for each feature in the training dataset.
-  The model deems highly scored variable more significant. 
+  The model deems highly scored variables more significant. 
 
 - `model_report`: report for the fitted base model.
 
