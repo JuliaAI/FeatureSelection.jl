@@ -20,7 +20,7 @@ recursive feature elimination should return the first columns as important featu
 ```@meta
 DocTestSetup = quote
   using MLJ, FeatureSelection, StableRNGs
-  rng = StableRNG(10)
+  rng = StableRNG(123)
   A = rand(rng, 50, 10)
   X = MLJ.table(A) # features
   y = @views(
@@ -52,16 +52,16 @@ end
 ```
 ```@example example1
 using MLJ, FeatureSelection, StableRNGs
-rng = StableRNG(10)
+rng = StableRNG(123)
 A = rand(rng, 50, 10)
 X = MLJ.table(A) # features
-y = @views(
-    10 .* sin.(
-        pi .* A[:, 1] .* A[:, 2]
-    ) .+ 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]
+ y = @views(
+        10 .* sin.(
+            pi .* A[:, 1] .* A[:, 2]
+        ) + 20 .* (A[:, 3] .- 0.5).^ 2 .+ 10 .* A[:, 4] .+ 5 * A[:, 5]
 ) # target
 ```
-Now we that we have our data we can create our recursive feature elimination model and 
+Now we that we have our data, we can create our recursive feature elimination model and 
 train it on our dataset
 ```@example example1
 RandomForestRegressor = @load RandomForestRegressor pkg=DecisionTree
@@ -74,51 +74,49 @@ fit!(mach)
 ```
 We can inspect the feature importances in two ways:
 ```jldoctest
-julia> report(mach).ranking
-10-element Vector{Int64}:
- 1
- 1
- 1
- 1
- 1
- 2
- 3
- 4
- 5
- 6
+julia> report(mach).scores
+Dict{Symbol, Int64} with 10 entries:
+  :x9  => 4
+  :x2  => 6
+  :x5  => 6
+  :x6  => 3
+  :x7  => 2
+  :x3  => 6
+  :x8  => 1
+  :x4  => 6
+  :x10 => 5
+  :x1  => 6
 
 julia> feature_importances(mach)
 10-element Vector{Pair{Symbol, Int64}}:
-  :x1 => 6
-  :x2 => 5
-  :x3 => 4
-  :x4 => 3
-  :x5 => 2
-  :x6 => 1
-  :x7 => 1
+  :x9 => 4
+  :x2 => 6
+  :x5 => 6
+  :x6 => 3
+  :x7 => 2
+  :x3 => 6
   :x8 => 1
-  :x9 => 1
- :x10 => 1
+  :x4 => 6
+ :x10 => 5
+  :x1 => 6
 ```
-Note that a variable with lower rank has more significance than a variable with higher rank while a variable with higher feature importance is better than a variable with lower feature importance.
-
 We can view the important features used by our model by inspecting the `fitted_params` 
 object.
 ```jldoctest
 julia> p = fitted_params(mach)
-(features_left = [:x1, :x2, :x3, :x4, :x5],
+(features_left = [:x4, :x2, :x1, :x5, :x3],
  model_fitresult = (forest = Ensemble of Decision Trees
 Trees:      100
-Avg Leaves: 25.26
-Avg Depth:  8.36,),)
+Avg Leaves: 25.3
+Avg Depth:  8.01,),)
 
 julia> p.features_left
 5-element Vector{Symbol}:
- :x1
- :x2
- :x3
  :x4
+ :x2
+ :x1
  :x5
+ :x3
 ```
 We can also call the `predict` method on the fitted machine, to predict using a 
 random forest regressor trained using only the important features, or call the `transform` 
@@ -149,24 +147,24 @@ As before we can inspect the important features by inspecting the object returne
 ```jldoctest
 julia> fitted_params(self_tuning_rfe_mach).best_fitted_params.features_left
 5-element Vector{Symbol}:
- :x1
- :x2
- :x3
  :x4
+ :x2
+ :x1
  :x5
+ :x3
 
 julia> feature_importances(self_tuning_rfe_mach)
 10-element Vector{Pair{Symbol, Int64}}:
-  :x1 => 6
-  :x2 => 5
-  :x3 => 4
-  :x4 => 3
-  :x5 => 2
-  :x6 => 1
+  :x9 => 2
+  :x2 => 6
+  :x5 => 6
+  :x6 => 4
   :x7 => 1
-  :x8 => 1
-  :x9 => 1
- :x10 => 1
+  :x3 => 6
+  :x8 => 5
+  :x4 => 6
+ :x10 => 3
+  :x1 => 6
 ```
 and call `predict` on the tuned model machine as shown below
 ```@example example1

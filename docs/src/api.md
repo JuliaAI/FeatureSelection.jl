@@ -7,3 +7,8 @@ CurrentModule = FeatureSelection
 FeatureSelector
 RecursiveFeatureElimination
 ```
+# Internal Utils
+```@docs
+abs_last
+score_features!
+```

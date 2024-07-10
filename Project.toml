@@ -1,7 +1,7 @@
 name = "FeatureSelection"
 uuid = "33837fe5-dbff-4c9e-8c2f-c5612fe2b8b6"
 authors = ["Anthony D. Blaom <anthony.blaom@gmail.com>", "Samuel Okon <okonsamuel50@gmail.com"]
-version = "0.1.1"
+version = "0.2.0"
 
 [deps]
 MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
