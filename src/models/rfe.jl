@@ -88,7 +88,7 @@ Train the machine using `fit!(mach, rows=...)`.
 # Operations
 
 - `transform(mach, X)`: transform the input table `X` into a new table containing only
-  columns corresponding to features gotten from the RFE algorithm.
+  columns corresponding to features accepted by the RFE algorithm.
 
 - `predict(mach, X)`: transform the input table `X` into a new table same as in
   `transform(mach, X)` above and predict using the fitted base model on the transformed
