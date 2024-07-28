@@ -397,6 +397,7 @@ end
 MMI.load_path(::Type{<:RFE}) = "FeatureSelection.RecursiveFeatureElimination"
 MMI.constructor(::Type{<:RFE}) = RecursiveFeatureElimination
 MMI.package_name(::Type{<:RFE}) = "FeatureSelection"
+MMI.is_wrapper(::Type{<:RFE}) = true
 
 for trait in [
     :supports_weights,
