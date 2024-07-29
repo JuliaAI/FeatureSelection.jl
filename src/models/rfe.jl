@@ -48,6 +48,7 @@ It recursively removes features, training a base model on the remaining features
 evaluating their importance until the desired number of features is selected.
 
 # Training data
+
 In MLJ or MLJBase, bind an instance `rfe_model` to data with
 
     mach = machine(rfe_model, X, y)
@@ -95,13 +96,17 @@ Train the machine using `fit!(mach, rows=...)`.
   table.
 
 # Fitted parameters
+
 The fields of `fitted_params(mach)` are:
+
 - `features_left`: names of features remaining after recursive feature elimination.
 
 - `model_fitresult`: fitted parameters of the base model.
 
 # Report
+
 The fields of `report(mach)` are:
+
 - `scores`: dictionary of scores for each feature in the training dataset.
   The model deems highly scored variables more significant.
 
@@ -215,22 +220,30 @@ abs_last(x::Pair{<:Any, <:Real}) = abs(last(x))
 """
     score_features!(scores_dict, features, importances, n_features_to_score)
 
-Internal method that updates the `scores_dict` by increasing the score for each feature based on their
+**Private method.**
+
+Update the `scores_dict` by increasing the score for each feature based on their
 importance and store the features in the `features` array.
 
 # Arguments
+
 - `scores_dict::Dict{Symbol, Int}`: A dictionary where the keys are features and
   the values are their corresponding scores.
+
 - `features::Vector{Symbol}`: An array to store the top features based on importance.
+
 - `importances::Vector{Pair(Symbol, <:Real)}}`: An array of tuples where each tuple
   contains a feature and its importance score.
+
 - `n_features_to_score::Int`: The number of top features to score and store.
 
 # Notes
+
 Ensure that `n_features_to_score` is less than or equal to the minimum of the
 lengths of `features` and `importances`.
 
 # Example
+
 ```julia
 scores_dict = Dict(:feature1 => 0, :feature2 => 0, :feature3 => 0)
 features = [:x1, :x1, :x1]
