@@ -191,3 +191,11 @@ end
 
     @test predict(mach2, (; x1=rand(2), x2=rand(2))) == yhat
 end
+
+@testset "is_wrapper" begin
+    m = RecursiveFeatureElimination(DecisionTreeClassifier())
+    @test is_wrapper(m)
+    @test is_wrapper(typeof(m))
+end
+
+true
