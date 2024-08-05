@@ -9,5 +9,6 @@ const MMI = MLJModelInterface
 ## Includes
 include("models/featureselector.jl")
 include("models/rfe.jl")
+include("shared.jl")
 
 end # module
