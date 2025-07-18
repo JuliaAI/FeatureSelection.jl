@@ -19,7 +19,7 @@ MLJScikitLearnInterface = "0.6"
 MLJModelInterface = "1.10"
 ScientificTypesBase = "3"
 StableRNGs = "1"
-StatisticalMeasures = "0.1"
+StatisticalMeasures = "0.1, 0.2"
 Tables = "1.2"
 Test = "1.6"
 
