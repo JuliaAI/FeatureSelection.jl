@@ -51,7 +51,7 @@ jobs:
                   @info read(`ls -al $src`, String)
                 end
                 '
-      - uses: actions/cache@v1
+      - uses: julia-actions/cache@v1
         env:
           cache-name: cache-artifacts
         with:
