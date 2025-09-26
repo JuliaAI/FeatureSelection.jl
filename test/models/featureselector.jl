@@ -12,7 +12,7 @@
     # Test feature selection with `features=Symbol[]`
     namesX   = MLJBase.schema(X).names |> collect
     selector = FeatureSelector()
-    f,       = MLJBase.fit(selector, 1, X)
+    f,       = MLJBase.fit(selector, 0, X)
     @test f == namesX
     Xt = MLJBase.transform(selector, f, MLJBase.selectrows(X, 1:2))
     @test Set(MLJBase.schema(Xt).names) == Set(namesX)
@@ -20,13 +20,13 @@
 
     # Test on selecting features if `features` keyword is defined
     selector = FeatureSelector(features=[:Zn, :Crim])
-    f,       = MLJBase.fit(selector, 1, X)
+    f,       = MLJBase.fit(selector, 0, X)
     @test MLJBase.transform(selector, f, MLJBase.selectrows(X, 1:2)) ==
             MLJBase.select(X, 1:2, [:Zn, :Crim])
 
     # test on ignoring a feature, even if it's listed in the `features`
     selector.ignore = true
-    f,   = MLJBase.fit(selector, 1, X)
+    f,   = MLJBase.fit(selector, 0, X)
     Xnew = MLJBase.transform(selector, f, X)
     @test MLJBase.transform(selector, f, MLJBase.selectrows(X, 1:2)) ==
          MLJBase.select(X, 1:2, [:x3, :x4])
@@ -35,7 +35,7 @@
     selector = FeatureSelector(features=[:x1, :mickey_mouse])
     @test_throws(
         ArgumentError,
-        MLJBase.fit(selector, 1, X)
+        MLJBase.fit(selector, 0, X)
     )
     selector.ignore = true
     @test_logs(
@@ -50,13 +50,13 @@
     selector = FeatureSelector(features= x-> x == (:x1))
    @test_throws(
         ArgumentError,
-        MLJBase.fit(selector, 1, X)
+        MLJBase.fit(selector, 0, X)
     )
     selector.ignore = true
     selector.features = x-> x in [:Zn, :Crim, :x3, :x4]
      @test_throws(
         ArgumentError,
-        MLJBase.fit(selector, 1, X)
+        MLJBase.fit(selector, 0, X)
     )
 
     # Test model Metadata
