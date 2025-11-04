@@ -62,9 +62,9 @@ const DTM = DummyTestModels
     selector_mach3 = machine(selector3, Xt, y)
     selector_mach4 = machine(selector4, Xt, y)
 
-    fit!(selector_mach)
-    fit!(selector_mach2)
-    fit!(selector_mach3)
+    fit!(selector_mach, verbosity=0)
+    fit!(selector_mach2, verbosity=0)
+    fit!(selector_mach3, verbosity=0)
     @test_logs(
         (:warn, "n_features > number of features in training data, hence no feature will be eliminated."),
         match_mode=:any,
@@ -149,7 +149,7 @@ end
     svm = SVR(kernel="linear")
     rfe = RecursiveFeatureElimination(model=svm, n_features=5)
     mach = machine(rfe, Xs, ys)
-    fit!(mach)
+    fit!(mach, verbosity=0)
 
     rfecv = RecursiveFeatureElimination(model=svm)
     tuning_rfe_model = TunedModel(
@@ -160,7 +160,7 @@ end
         range=range(rfecv, :n_features, values=1:10)
     )
     self_tuning_rfe_mach = machine(tuning_rfe_model, Xs, ys)
-    fit!(self_tuning_rfe_mach)
+    fit!(self_tuning_rfe_mach, verbosity=0)
 
     # Compare results
     # Convert MLJ RFE scores to rankings
