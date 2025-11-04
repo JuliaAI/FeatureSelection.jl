@@ -108,6 +108,7 @@ julia> p = fitted_params(mach)
 Trees:      100
 Avg Leaves: 25.3
 Avg Depth:  8.01,))
+Avg Depth:  8.01,))
 
 julia> p.features_left
 5-element Vector{Symbol}:
