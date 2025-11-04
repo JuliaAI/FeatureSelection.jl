@@ -104,11 +104,10 @@ We can view the important features used by our model by inspecting the `fitted_p
 object.
 ```jldoctest
 julia> p = fitted_params(mach)
-(features_left = [:x4, :x2, :x1, :x5, :x3],
- model_fitresult = (forest = Ensemble of Decision Trees
-Trees:      100
-Avg Leaves: 25.3
-Avg Depth:  8.01,),)
+(features_left = [:x4, :x2, :x1, :x5, :x3], model_fitresult = (forest = Ensemble of Decision Trees
+│ Trees:      100
+│ Avg Leaves: 25.3
+│ Avg Depth:  8.01,))
 
 julia> p.features_left
 5-element Vector{Symbol}:
