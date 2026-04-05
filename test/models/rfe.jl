@@ -51,7 +51,9 @@ const DTM = DummyTestModels
     selector = RecursiveFeatureElimination(model=rf)
     selector2 = RecursiveFeatureElimination(model=rf2)
     @test selector isa FeatureSelection.DeterministicRecursiveFeatureElimination
+    @test selector isa MLJBase.Deterministic
     @test selector2 isa FeatureSelection.ProbabilisticRecursiveFeatureElimination
+    @test selector2 isa MLJBase.Probabilistic
     @test MLJBase.constructor(selector) == RecursiveFeatureElimination
 
     # Fit models
