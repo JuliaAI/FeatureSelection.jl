@@ -62,6 +62,7 @@
     # Test model Metadata
     @test MLJBase.input_scitype(selector) == MLJBase.Table
     @test MLJBase.output_scitype(selector) == MLJBase.Table
+    @test MLJBase.package_name(selector) == "FeatureSelection"
 end
 
 #  To be added with FeatureSelectorRule X = (n1=["a", "b", "a"], n2=["g", "g", "g"], n3=[7, 8, 9],
