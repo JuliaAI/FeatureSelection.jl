@@ -10,5 +10,6 @@ const MMI = MLJModelInterface
 include("models/featureselector.jl")
 include("models/rfe.jl")
 include("shared.jl")
+include("type_docstrings.jl")
 
 end # module
