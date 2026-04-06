@@ -22,7 +22,7 @@ const ERR_FEATURES_SEEN = ArgumentError(
 const MODEL_TYPES = [
     :ProbabilisticRecursiveFeatureElimination, :DeterministicRecursiveFeatureElimination
 ]
-const SUPER_TYPES = [:Deterministic, :Probabilistic]
+const SUPER_TYPES = [:Probabilistic, :Deterministic]
 const MODELTYPE_GIVEN_SUPERTYPES = zip(MODEL_TYPES, SUPER_TYPES)
 
 for (ModelType, ModelSuperType) in  MODELTYPE_GIVEN_SUPERTYPES
@@ -181,6 +181,7 @@ function RecursiveFeatureElimination(
         # which is rare.
         throw(ERR_MODEL_TYPE)
     end
+
     message = MMI.clean!(selector)
     isempty(message) || @warn(message)
     return selector
