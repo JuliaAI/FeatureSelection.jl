@@ -106,8 +106,10 @@ const DTM = DummyTestModels
     # Traits
     @test MLJBase.package_name(selector) == "FeatureSelection"
     @test MLJBase.load_path(selector) == "FeatureSelection.RecursiveFeatureElimination"
-    @test MLJBase.iteration_parameter(selector) == FeatureSelection.prepend(:model, MLJBase.iteration_parameter(selector.model))
-    @test MLJBase.training_losses(selector, rpt) == MLJBase.training_losses(selector.model, rpt.model_report)
+    @test MLJBase.iteration_parameter(selector) ==
+        FeatureSelection.prepend(:model, MLJBase.iteration_parameter(selector.model))
+    @test MLJBase.training_losses(selector, rpt) ==
+        MLJBase.training_losses(selector.model, rpt.model_report)
 end
 
 @testset "Compare results for RFE with scikit-learn" begin
